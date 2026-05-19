@@ -1,0 +1,11 @@
+interface:
+  display_name: Academic Slide Minimalist
+  short_description: Creates clear literature-report PPTs from real paper figures
+    using real paper/SI figures and a sample-deck image2 workflow.
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

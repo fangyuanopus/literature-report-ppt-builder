@@ -1,0 +1,25 @@
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+*.log
+
+# Generated deck outputs
+output/
+outputs/
+dist/
+build/
+*.pptx.tmp
+*_rendered/
+*_screenshots/
+
+# Local task and editor state
+.codex-tasks/
+plan/
+.vscode/
+.idea/
+
+# Python cache, if helper scripts are added later
+__pycache__/
+*.py[cod]
+.pytest_cache/
