@@ -1,24 +1,37 @@
 # Literature Report PPT Builder Skill
 
-Open-source Codex skill for creating rigorous academic literature-report presentation decks from papers, supplementary information, and real source figures.
+用于从论文、补充信息和真实来源图像中，构建严谨学术文献汇报 PPT 的开源 Codex Skill。
 
-The bundled skill is `academic-slide-minimalist`. It is designed for Chinese academic paper presentations, journal-club decks, thesis-defense style reports, and image-first PPT workflows where layout stability and scientific traceability matter.
+本项目内置的 Skill 为 `academic-slide-minimalist`，主要面向中文学术论文汇报、Journal Club、毕业论文答辩风格汇报，以及以整页图片为核心的 PPT 生成流程。它适合对版式稳定性、科研图像可追溯性和汇报逻辑完整性要求较高的场景。
 
-## What It Does
+## 功能介绍
 
-- Reads a main paper and supplementary information as one evidence system.
-- Builds paper logic maps, figure-source manifests, adaptive navigation, and page-level briefs before slide generation.
-- Creates image-first 16:9 PPT pages using real figures from the paper, SI, or user-provided materials.
-- Preserves a restrained academic visual style based on the included sample deck rhythm.
-- Audits page order, figure readability, terminology consistency, and speaker readiness.
+该 Skill 可以：
 
-## Non-Negotiable Rule
+- 将主论文与补充信息作为一个完整的证据系统进行阅读与分析；
+- 在生成幻灯片前，构建论文逻辑图、图像来源清单、自适应导航结构和逐页页面简报；
+- 使用论文、补充信息或用户提供材料中的真实图像，生成 16:9 的图片式 PPT 页面；
+- 参考内置样例 PPT 的页面节奏，保持克制、稳定、学术化的视觉风格；
+- 对页面顺序、图像可读性、术语一致性和汇报准备度进行检查。
 
-Scientific visuals must come from real source material only. The skill explicitly forbids inventing, regenerating, or redrawing experimental figures, structures, spectra, mechanisms, charts, tables, or other scientific data.
+## 不可违反的规则
 
-Allowed visual operations are limited to deterministic edits such as cropping, scaling, alignment, masking margins, callouts, boxes, arrows, labels, and full-slide placement.
+所有科学图像必须来自真实来源材料。
 
-## Repository Structure
+该 Skill 明确禁止凭空创造、重新生成或重画实验图像、分子结构、谱图、反应机理、图表、数据表格或其他科研数据。
+
+允许的视觉操作仅限于确定性的版式处理，例如：
+
+- 裁剪；
+- 缩放；
+- 对齐；
+- 遮盖边缘空白；
+- 添加标注框；
+- 添加箭头；
+- 添加标签；
+- 整页排版。
+
+## 项目结构
 
 ```text
 academic-slide-minimalist/
@@ -28,21 +41,23 @@ academic-slide-minimalist/
   references/
 ```
 
-`SKILL.md` contains the core workflow. The `references/` files provide progressive-disclosure guidance for specific production stages, including close reading, adaptive navigation, deck ordering, page briefs, image consistency, quality gates, and final delivery.
+`SKILL.md` 包含核心工作流程。
 
-The sample PPTX is a style and rhythm reference only. It is not a scientific source and should not be reused as evidence for a new paper.
+`references/` 文件夹提供分阶段的补充指导，包括精读论文、自适应导航、页面顺序规划、逐页简报、图像一致性检查、质量门槛和最终交付检查等内容。
 
-## Install
+`assets/sample-literature-report.pptx` 仅作为版式风格和页面节奏参考，不是科研证据来源，也不应被复用为新论文的科学材料。
 
-Copy the skill folder into your Codex skills directory:
+## 安装方法
+
+将 Skill 文件夹复制到 Codex skills 目录中：
 
 ```powershell
 Copy-Item -Recurse .\academic-slide-minimalist "$env:USERPROFILE\.codex\skills\academic-slide-minimalist"
 ```
 
-Then start a new Codex session so the skill metadata can be discovered.
+然后启动一个新的 Codex 会话，使 Skill 元数据能够被发现。
 
-## Example Prompts
+## 示例提示词
 
 ```text
 Use the academic-slide-minimalist skill to turn this paper and SI into a 20+ page Chinese literature-report PPT.
@@ -56,15 +71,20 @@ Use the academic-slide-minimalist skill to turn this paper and SI into a 20+ pag
 先诊断我这个已有文献汇报 PPT 的问题，再给出需要重画的页面清单。
 ```
 
-## Validation
+## 验证方法
 
-Validate the skill with the Codex skill validation script when available:
+如果可用，可以使用 Codex Skill 验证脚本进行检查：
 
 ```powershell
 $env:PYTHONUTF8 = "1"
 python "$env:USERPROFILE\.codex\skills\.system\skill-creator\scripts\quick_validate.py" .\academic-slide-minimalist
 ```
 
+##  社区
+- [LINUX DO](https://linux.do/)
+
+本项目认可并感谢 LINUX DO 社区在中文开发者开源交流、项目分享和技术讨论中的价值。除非社区另有明确说明，此处仅为社区致谢和链接，不代表官方背书。
+
 ## License
 
-MIT License. See `LICENSE`.
+MIT License. See LICENSE.
