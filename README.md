@@ -19,29 +19,10 @@
 
 下面的页面来自仓库内置样例 `academic-slide-minimalist/assets/sample-literature-report.pptx`，用于展示 skill 追求的页面组织方式：真实论文图、清晰结论句、红黑灰学术风格、导航一致、证据链可讲。
 
-### 证据链整合页
-
-![Evidence chain demo](docs/images/demo-evidence-chain.png)
-
-这类页面适合把多个表征结果和催化结果放在同一页里，强调“迁移证据 -> 性能变化 -> 本页结论”的因果链。页面重点不是堆图，而是让听众知道每张图回答了什么问题。
-
-### 对比结论页
-
-![Comparison summary demo](docs/images/demo-comparison-summary.png)
-
-这类页面适合从多组对照中提炼 2-3 个核心结论。右侧结论块把图中的趋势转成可讲述的判断，底部红条负责压住本页主结论。
-
-### 参数窗口页
-
-![Parameter window demo](docs/images/demo-parameter-window.png)
-
-这类页面适合解释“不是越多越好”的实验窗口：左侧说明不足，右侧说明过量，中间窗口给出最优区间。适合用于剂量、比例、温度、时间、负载量等变量讨论。
-
-### 机理证据页
-
-![FTIR mechanism demo](docs/images/demo-ftir-mechanism.png)
-
-这类页面适合展示直接机理证据。图中保留真实谱图和关键峰位，通过框线、箭头、编号解释和底部结论把实验现象转成机制判断。
+<img width="1918" height="1078" alt="PixPin_2026-05-20_20-24-46" src="https://github.com/user-attachments/assets/8ad412cf-5e1e-4acc-a8b5-303bcefefc37" />
+<img width="1920" height="1080" alt="PixPin_2026-05-20_20-25-12" src="https://github.com/user-attachments/assets/20deb4b2-6807-4cbd-afcf-aa5843266480" />
+<img width="1920" height="1080" alt="PixPin_2026-05-20_20-25-29" src="https://github.com/user-attachments/assets/f8387eb9-e004-4adf-9e3f-b91374cc16ac" />
+<img width="1920" height="1080" alt="PixPin_2026-05-20_20-25-49" src="https://github.com/user-attachments/assets/473733ba-fb67-4106-8cf6-98f9ce17ac1f" />
 
 ---
 
