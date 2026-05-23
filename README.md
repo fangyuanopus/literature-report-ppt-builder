@@ -19,10 +19,10 @@
 
 下面的页面来自仓库内置样例 `academic-slide-minimalist/assets/sample-literature-report.pptx`，用于展示 skill 追求的页面组织方式：真实论文图、清晰结论句、红黑灰学术风格、导航一致、证据链可讲。
 
-<img width="1918" height="1078" alt="PixPin_2026-05-20_20-24-46" src="https://github.com/user-attachments/assets/8ad412cf-5e1e-4acc-a8b5-303bcefefc37" />
-<img width="1920" height="1080" alt="PixPin_2026-05-20_20-25-12" src="https://github.com/user-attachments/assets/20deb4b2-6807-4cbd-afcf-aa5843266480" />
-<img width="1920" height="1080" alt="PixPin_2026-05-20_20-25-29" src="https://github.com/user-attachments/assets/f8387eb9-e004-4adf-9e3f-b91374cc16ac" />
-<img width="1920" height="1080" alt="PixPin_2026-05-20_20-25-49" src="https://github.com/user-attachments/assets/473733ba-fb67-4106-8cf6-98f9ce17ac1f" />
+![文献汇报样例 1](docs/images/demo-slide-01-title.jpg)
+![文献汇报样例 2](docs/images/demo-slide-02-evidence.jpg)
+![文献汇报样例 3](docs/images/demo-slide-03-comparison.jpg)
+![文献汇报样例 4](docs/images/demo-slide-04-summary.jpg)
 
 ---
 
@@ -225,10 +225,10 @@ academic-slide-minimalist/
 docs/
   README.en.md
   images/
-    demo-evidence-chain.png
-    demo-comparison-summary.png
-    demo-parameter-window.png
-    demo-ftir-mechanism.png
+    demo-slide-01-title.jpg
+    demo-slide-02-evidence.jpg
+    demo-slide-03-comparison.jpg
+    demo-slide-04-summary.jpg
 ```
 
 `SKILL.md` 是入口和总流程。`references/` 采用 progressive disclosure：只有在对应阶段才读取具体文件，避免一次性把所有规则塞进上下文。

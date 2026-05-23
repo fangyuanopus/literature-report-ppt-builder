@@ -19,29 +19,10 @@ The core principle is simple: **clarity before beauty, real evidence before visu
 
 The pages below are exported from `academic-slide-minimalist/assets/sample-literature-report.pptx`. They show the intended deck style: real paper figures, conclusion-style titles, restrained red/black/gray academic design, consistent navigation, and traceable evidence.
 
-### Evidence-chain page
-
-![Evidence chain demo](images/demo-evidence-chain.png)
-
-This page type combines characterization evidence and catalytic results into one causal chain. The goal is not to pile up figures, but to make each figure answer a specific question.
-
-### Comparison-summary page
-
-![Comparison summary demo](images/demo-comparison-summary.png)
-
-This page type extracts two or three conclusions from multiple controls. The side panel turns visual trends into speaker-ready claims, and the bottom bar locks the key takeaway.
-
-### Parameter-window page
-
-![Parameter window demo](images/demo-parameter-window.png)
-
-This page type explains why more is not always better. It works well for dose, ratio, temperature, time, loading, and other experimental variables.
-
-### Mechanism-evidence page
-
-![FTIR mechanism demo](images/demo-ftir-mechanism.png)
-
-This page type presents direct mechanistic evidence. It keeps the real spectrum, highlights key regions, and turns experimental observations into a cautious mechanism claim.
+![Literature report demo 1](images/demo-slide-01-title.jpg)
+![Literature report demo 2](images/demo-slide-02-evidence.jpg)
+![Literature report demo 3](images/demo-slide-03-comparison.jpg)
+![Literature report demo 4](images/demo-slide-04-summary.jpg)
 
 ---
 
@@ -242,10 +223,10 @@ academic-slide-minimalist/
 docs/
   README.en.md
   images/
-    demo-evidence-chain.png
-    demo-comparison-summary.png
-    demo-parameter-window.png
-    demo-ftir-mechanism.png
+    demo-slide-01-title.jpg
+    demo-slide-02-evidence.jpg
+    demo-slide-03-comparison.jpg
+    demo-slide-04-summary.jpg
 ```
 
 `SKILL.md` is the entry point. `references/` uses progressive disclosure: each stage loads only the rules it needs.
