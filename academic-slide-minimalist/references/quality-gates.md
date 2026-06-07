@@ -56,11 +56,26 @@ Pass only if each page image:
 - keeps one dominant figure or one clear evidence block;
 - avoids decorative icons, commercial templates, gradients, glows, and fake diagrams.
 
+## Gate 5.5: Image2 Execution and Manifest Gate
+
+Pass only if:
+
+- Image2-style full-slide generation availability was explicitly confirmed before final page generation;
+- `image2_manifest.json` exists before PPTX assembly;
+- every final slide image is listed in the manifest;
+- every manifest entry has `generation_route: "image2_full_slide"` and `accepted: true`;
+- every final image path in the manifest exists;
+- no page image was produced by Python, Pillow, Matplotlib, HTML/CSS, SVG/canvas, browser screenshots, editable PowerPoint layouts, templates, or rasterized editable slides.
+
+If this gate fails, do not deliver a PPTX. Deliver only reading outputs, page briefs, Image2 prompts, and assembly notes.
+
 ## Gate 6: Final PPT Assembly Gate
 
 Pass only if:
 
 - image2 pages were inserted full-slide into PPT pages;
+- `scripts/validate_image_only_pptx.py` passes on the final PPTX, with manifest validation when available;
+- the final PPTX has exactly one full-slide picture per slide and zero editable slide objects;
 - page order matches the approved/internal outline;
 - navigation active section and page numbers are consistent;
 - no slide is blank, duplicated by accident, or missing from the page count;
@@ -100,8 +115,9 @@ For maximum-quality tasks, pass only if:
 
 For maximum-quality tasks, pass only if the final response clearly states which deliverables were produced:
 
-- final PPTX;
+- final PPTX, only if Image2 and validation gates passed;
 - image2 pages, if produced;
+- image2_manifest.json, if a PPTX was delivered;
 - figure manifest;
 - page briefs;
 - speaker notes;

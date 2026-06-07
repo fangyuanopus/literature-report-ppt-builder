@@ -1,9 +1,75 @@
 ---
 name: academic-slide-minimalist
-description: use this skill when the user wants to create, redesign, critique, or generate academic research ppt slides, literature-report decks, thesis-defense slides, journal-club presentations, ppt page images, slide copy, or full paper-to-ppt workflows. especially use it when the user provides a paper pdf plus supplementary information, asks to follow a sample deck/template, says image2, wants at least 20 pages, needs adaptive navigation, wants a reordered full deck, requires real paper figures only, or wants rigorous close reading before slide generation. first read the paper and si, build logic/evidence maps and a deck-order map, derive paper-specific navigation, create 16:9 slide images, assemble the ppt, and audit page order/style without inventing scientific visuals.
+description: >
+  Use this skill for Chinese academic literature-report PPTs, research slides, journal-club decks, thesis-defense slides, slide page images, or paper-to-PPT workflows based on real paper/SI figures. It enforces an Image2 availability gate: only an Image2-style native 16:9 full-slide image backend may create final pages. If unavailable or unconfirmed, stop before PPTX creation and deliver only reading outputs, deck order map, page briefs, figure manifest, Image2 prompts, and assembly notes. Never fall back to code-rendered slides, editable PowerPoint layouts, HTML/CSS screenshots, SVG/canvas, Python/Pillow/Matplotlib, templates, or rasterized editable slides.
 ---
 
 # Academic Slide Minimalist
+
+## Non-Bypassable Execution Gates
+
+These gates override every other workflow section in this skill. Run them before any slide-generation or PPTX-packaging action.
+
+### Gate A: Image2 availability gate
+
+Before creating final slide images, sample redesigned pages, or a PPTX, explicitly determine whether the current environment has an Image2-style native full-slide image-generation backend.
+
+The backend counts as available only if all are true:
+
+- it can generate one complete 16:9 academic slide image per page;
+- the full-slide image can include title, navigation, real source figure crops, annotations, labels, notes, and page number inside the image;
+- it can preserve scientific source crops faithfully without redrawing, restyling, or semantically changing them;
+- its outputs can be saved as accepted final slide images and then mechanically packaged into an image-only PPTX.
+
+If availability is unavailable, unclear, unconfirmed, or blocked by the current environment, do not create or deliver any PPTX. Deliver only the valid non-image artifacts: paper reading outputs, adaptive navigation, `deck_order_map.md`, `figure_source_manifest.md`, `page_briefs.md`, Image2 prompts, and assembly notes.
+
+Use this boundary statement when stopping:
+
+```text
+当前环境未确认可用 Image2-style 全页幻灯片生成后端，因此根据本 skill 的 Image2-only 规则，本次不交付 PPTX，只交付可用于 Image2 生成的页面方案、figure manifest、page briefs、prompts 与 assembly notes。
+```
+
+### Gate B: Image2 manifest gate
+
+Do not package a PPTX unless `image2_manifest.json` exists and records every final slide image. The manifest must include:
+
+```json
+{
+  "image2_backend_confirmed": true,
+  "slides": [
+    {
+      "slide_no": 1,
+      "final_image": "final_images/slide_001.png",
+      "generation_route": "image2_full_slide",
+      "accepted": true,
+      "source_figures": []
+    }
+  ]
+}
+```
+
+Every delivered slide must have `generation_route: "image2_full_slide"` and `accepted: true`. If the manifest is missing, incomplete, or says any page used another route, do not deliver a PPTX.
+
+### Gate C: PPTX validation gate
+
+Before delivering a PPTX, run `scripts/validate_image_only_pptx.py` on the assembled file. If a manifest exists, validate with `--manifest image2_manifest.json`. Delivery is allowed only when the validator passes.
+
+A passing PPTX must have exactly one full-slide image per slide and no editable text boxes, shapes, charts, tables, SmartArt, icons, or extra PowerPoint annotations.
+
+### Gate D: mandatory delivery statement
+
+When delivering a PPTX, include this factual checklist in the final response:
+
+```text
+Image2 backend used: yes
+Full-slide images generated: yes
+PPTX assembly mode: one full-slide image per slide
+Editable slide elements: none
+Source scientific visuals: real paper/SI/user-provided figures only
+Validation completed: yes
+```
+
+If any line is not true, do not deliver the PPTX.
 
 ## Core Mission
 
@@ -14,6 +80,42 @@ The default target is a complete Chinese academic presentation deck that follows
 Use the sample PPT as a visual and rhythm reference, not as a fixed set of section names. Derive the actual navigation labels and page order from the paper's domain, evidence chain, and story structure. A simple paper can use a default rhythm such as basic information, background, research idea, results, summary, and closing; a result-heavy paper should split results into meaningful sections such as design strategy, performance validation, structure evidence, mechanism explanation, application validation, or limitations.
 
 When the user says to follow their sample PPT, do **not** invent a generic commercial deck and do not hard-code one universal navigation bar. Preserve the sample deck's navigation style, page rhythm, academic tone, and restrained red-black-gray visual language, while adapting section names to the current paper. Use `references/sample-deck-rhythm.md`, `references/adaptive-navigation.md`, and, when needed, the bundled `assets/sample-literature-report.pptx` as style references only.
+
+## Image2-Only Route Lock
+
+This skill is an Image2-style full-slide academic deck workflow, not a code-rendered slide engine and not an editable PowerPoint layout workflow.
+
+For any final slide page image, redesigned page, sample page, full-deck page, or delivered PPTX:
+
+1. Image2-style native full-slide generation is the only allowed visual generation route.
+2. Each slide must be generated as one complete 16:9 full-slide image.
+3. The generated image itself must already contain the title, navigation, real source figure crops, annotations, labels, notes, and page number.
+4. A final PPTX, when delivered, is only a mechanical container for those accepted full-slide images.
+5. Each PPT slide must contain exactly one full-slide image and no editable slide objects.
+
+Hard stop: if Image2-style full-slide generation or an equivalent native full-slide image-generation backend is unavailable, stop after producing the paper-reading outputs, deck outline, page briefs, Image2 prompts, and assembly notes. Do not create a visually inferior substitute deck through code, editable PowerPoint, screenshots, or templates.
+
+Forbidden fallback routes include:
+
+- Python, Pillow, Matplotlib, or any code-drawn full-slide page;
+- HTML, CSS, React, or browser-rendered slide pages;
+- SVG or canvas slide rendering;
+- browser screenshots of coded layouts;
+- native PowerPoint layouts built from editable text boxes, shapes, charts, tables, SmartArt, icons, or card grids;
+- editable PPT pages rasterized afterward and presented as Image2 output;
+- generic commercial PPT templates;
+- decorative AI scientific diagrams replacing real paper figures.
+
+Allowed code usage is mechanical only:
+
+- extract or crop real figures from paper, SI, user screenshots, or user PPT pages;
+- rename, organize, and version source assets;
+- create contact sheets, montages, or render audits for QA;
+- compress or validate images;
+- package accepted full-slide images into an image-only PPTX;
+- check slide count, aspect ratio, ordering, filenames, and whether editable elements exist.
+
+Code must never be used to design or render the final slide page.
 
 ## Non-Negotiable Scientific Rule
 
@@ -46,6 +148,36 @@ Allowed operations are deterministic only:
 
 If a needed figure is not available, do not fabricate it. Use a text/logic page, ask for the source, or say the figure is missing.
 
+## Real Figure Fidelity Lock
+
+Image2-style generation may compose the academic slide page, but it must not invent, redraw, stylize, reinterpret, or semantically alter scientific visuals.
+
+All scientific visuals must come from exact source crops extracted from:
+
+- the main paper PDF;
+- supplementary information / supporting information;
+- user-provided screenshots;
+- user-provided PPT pages;
+- other explicit user-provided source images.
+
+The image-generation prompt must instruct the backend to preserve source figure crops as faithful embedded evidence, not reinterpret them as decorative diagrams.
+
+Never use Image2 or any other image model to fabricate, approximate, or restyle:
+
+- molecular structures;
+- crystal structures;
+- microscopy images;
+- spectra;
+- XRD / NMR / IR / Raman / TG / DSC data;
+- adsorption curves;
+- reaction schemes;
+- mechanisms;
+- tables;
+- catalytic or performance charts;
+- any experimental data figure.
+
+If the image-generation backend cannot preserve real figure crops reliably enough for academic use, stop after preparing the figure-source manifest, slide outline, page briefs, Image2 prompts, and assembly notes. Do not replace real figures with simulated charts, redrawn mechanisms, decorative scientific icons, or code-generated substitutes.
+
 ## Default Full-Deck Rule
 
 When the user asks for a literature-report PPT from a paper:
@@ -70,6 +202,7 @@ For any full-deck or multi-batch image2 task, control the deck as a single prese
 5. Use real scientific figures only. Do not add decorative vector icons or invented diagrams. Only annotate real figures with boxes, arrows, shaded regions, zoom windows, labels, and key-number callouts. Follow `references/real-figure-annotation-rules.md` and `references/trend-emphasis-rules.md`.
 6. Track generation status for every slide. Do not guess which pages are complete; keep `image_generation_status.md`. Follow `references/image-generation-status.md`.
 7. Assemble the PPT only from the final approved image folder. Follow `references/version-control-and-final-folder.md`, `references/pre-assembly-checklist.md`, and `references/post-assembly-render-audit.md`.
+8. Final slide pages must be Image2-style full-slide images only. Code may support extraction, cropping, file naming, contact sheets, QA, compression, and image-only PPTX packaging, but code must not design or render the final slide pages. If no Image2-style full-slide generation route is available, stop after outlines, page briefs, and prompts instead of producing a code-rendered or editable-PPT substitute.
 
 
 ## Iterative Refinement and Diagnosis Mode
@@ -97,6 +230,7 @@ slide_outline.md
 page_briefs.md
 image2_generation_plan.md
 image_generation_status.md
+image2_manifest.json
 speaker_notes.md
 quality_check_report.md
 deck_diagnosis_report.md
@@ -225,22 +359,58 @@ Every page brief must specify:
 
 If the user asked to review the outline first, pause after the brief. If the user asked for direct generation, maintain the brief internally and continue.
 
-### 6. Generate image2 pages first
+### 6. Generate Image2-style full-slide pages only
 
-For final PPT construction, use the user's preferred image2 workflow:
+For final PPT construction, Image2-style native full-slide generation is the only permitted slide-design route.
 
-1. create one complete 16:9 slide image for each page.
-2. each image should already include title, navigation, figures, labels, notes, and page number.
-3. insert those images into corresponding PPT pages.
-4. do not rebuild the deck as many editable PPT text boxes unless the user specifically asks.
+Required process:
 
-The generated PPT should behave like an image-based deck: stable layout, consistent style, low risk of element shifting.
+1. Generate one complete 16:9 slide image for each page through Image2-style full-slide generation.
+2. Each generated page image must already include the slide title, adaptive navigation, real source figure crops, annotations, labels, notes, and page number.
+3. Record every accepted page in `image2_manifest.json` with `generation_route: "image2_full_slide"` and `accepted: true`.
+4. Insert each accepted full-slide image into the corresponding PPT page as one full-slide image.
+5. The resulting PPTX must behave like an image-based deck: stable layout, no editable slide text, no shifting objects, and no dependency on PowerPoint layout rendering.
+
+The PPTX is only a packaging container. It is not the design surface.
+
+Allowed code usage is strictly mechanical:
+
+- extract or crop real paper / SI / user-provided figures;
+- rename and organize source assets;
+- create contact sheets or rendered montages for QA;
+- compress images;
+- package accepted PNG/JPG slide images into an image-only PPTX;
+- validate page count, aspect ratio, filenames, ordering, and editable-object absence.
+
+Forbidden fallback routes:
+
+- HTML/CSS/React slide rendering;
+- SVG/canvas slide rendering;
+- Python/Pillow/Matplotlib slide drawing;
+- browser screenshots of coded layouts;
+- native PowerPoint layout construction with editable text boxes, shapes, charts, tables, SmartArt, icons, or card grids;
+- rasterizing an editable PPT after designing it as normal slides;
+- generic commercial templates;
+- decorative AI diagrams that replace real scientific figures.
+
+Hard stop: if Image2-style full-slide generation or an equivalent native full-slide image-generation backend is unavailable, stop after paper-reading outputs, deck outline, page briefs, and Image2 prompts. Do not generate a visually inferior academic deck through code, editable PPT construction, screenshots, or templates.
 
 ### 7. Assemble the PPT
 
-Place each image2 page full-slide into the PPT in order.
+Assemble the PPT only after accepted Image2-style full-slide images exist.
 
-Keep the deck structure and visual rhythm close to the user's sample. Do not switch to a generic commercial template.
+Rules:
+
+- Place exactly one final full-slide image on each PPT slide.
+- The image must fill the full 16:9 slide canvas.
+- Do not add editable PowerPoint text, shapes, charts, tables, icons, SmartArt, or extra annotations on top of the image.
+- Do not use PowerPoint as the visual design tool.
+- Do not use code-rendered pages as substitutes for Image2-style generated pages.
+- PPT packaging is a mechanical container step only.
+
+Before packaging, confirm `image2_manifest.json` exists and every slide is accepted from the Image2 full-slide route. After packaging, run `scripts/validate_image_only_pptx.py` and block delivery if validation fails.
+
+The final PPT must be image-only. If editable elements are present, the deck fails this skill's output contract.
 
 ### 7.5. Prepare speaker notes, backup slides, and question preparation when quality matters
 
@@ -248,9 +418,20 @@ For maximum-quality tasks, prepare speaker notes using `references/speaker-notes
 
 Use `references/question-prep.md` to prepare likely teacher/advisor questions and cautious answers. Use `references/backup-slides.md` to decide whether dense SI evidence, methods, controls, or full source panels should be appended as backup slides.
 
-### 7.6. Choose output editability deliberately
+### 7.6. Output editability boundary
 
-Default to the user's preferred image2-based stable deck. Use `references/editable-output-options.md` only when the user asks for an editable deck or when a dual stable/editable package is clearly useful. Never claim an editable PPT exists unless it was actually produced.
+This skill's default and authoritative deliverable is an image-only PPTX assembled from Image2-style full-slide images.
+
+Do not create an editable PPTX as a fallback when Image2-style generation is unavailable.
+
+If the user explicitly asks for editable slides, explain the boundary:
+
+- this skill is optimized for stable Image2-style academic slide images;
+- editable PPT construction is a different workflow;
+- editable reconstruction may lose the visual quality, stability, and figure-fidelity guarantees of this skill;
+- the current skill may provide page briefs, figure placement plans, and Image2 prompts, but must not replace the Image2-only route with editable PowerPoint design.
+
+Never claim an editable PPT exists unless it was actually produced through a separate editable-slide workflow. Do not use editable slides as an intermediate step and then rasterize them as if they were Image2 output.
 
 ### 8. Final check
 
@@ -264,6 +445,16 @@ Before delivering, apply `references/quality-gates.md` and verify:
 - verify the final PPT is assembled from the approved final image2 folder only.
 - verify a rendered montage or equivalent page audit has checked order, navigation, and style continuity.
 - verify result claims do not exceed the paper's evidence.
+- verify every final PPT slide contains exactly one full-slide image.
+- verify slidesWithEditableText = 0.
+- verify there are no editable PowerPoint text boxes, shapes, charts, tables, icons, SmartArt, or extra annotations.
+- verify no final page was created through Python/Pillow/Matplotlib, HTML/CSS/React, SVG/canvas, browser screenshots, or native editable PowerPoint construction.
+- verify code was used only for extraction, cropping, file organization, QA, compression, validation, or image-only PPTX packaging.
+- verify Image2-style full-slide generation was used for every final slide image.
+- verify `image2_manifest.json` exists and every slide has `generation_route: "image2_full_slide"` and `accepted: true`.
+- verify `scripts/validate_image_only_pptx.py` passed on the final PPTX, with manifest validation when available.
+- verify the final response includes the mandatory delivery statement.
+- if Image2-style generation was unavailable, verify no completed PPTX was delivered; only outlines, page briefs, prompts, and assembly notes may be delivered.
 
 ## Deck Structure Template
 
@@ -432,6 +623,27 @@ Avoid overstating:
 - do not call a result “最优” unless the figure directly supports that comparison.
 - do not translate every English term mechanically; keep accepted terms like STEM, PXRD, XPS, BET when useful.
 
+## Failure Behavior When Image2 Is Unavailable
+
+When the user asks for final slide images or a complete PPTX, but Image2-style full-slide generation is unavailable, do not attempt a substitute production route.
+
+Instead, clearly deliver the highest-value non-image outputs that are still valid under this skill:
+
+1. paper logic tree;
+2. main-paper + SI crosswalk;
+3. figure-source manifest;
+4. adaptive navigation plan;
+5. deck_order_map;
+6. page-by-page outline;
+7. page briefs;
+8. Image2 prompts;
+9. image-only assembly notes;
+10. QA checklist.
+
+Use a clear boundary statement: the current environment does not provide an Image2-style full-slide generation route, so this skill cannot use code rendering, HTML screenshots, or editable PPT as a substitute for final page generation. Continue with reading outputs, page blueprints, page briefs, and Image2 prompts only.
+
+Do not apologize repeatedly and do not offer code-rendered PPT as an alternative inside this skill.
+
 ## Output Behavior
 
 ### When the user asks for a full PPT from a paper
@@ -452,7 +664,7 @@ Provide, or internally create before generation:
 12. deck diagnosis report when refining an existing deck
 13. final delivery preview before the final response
 
-If outputting an artifact, return the final PPTX. In maximum-quality mode, also prepare the support deliverables in `references/delivery-package.md` when feasible; never claim a support file exists if it was not actually produced. Use `references/failure-recovery.md` whenever a source, figure, or deliverable cannot be produced cleanly.
+If outputting an artifact, return the final PPTX only after Gates A-D pass. In maximum-quality mode, also prepare the support deliverables in `references/delivery-package.md` when feasible; never claim a support file exists if it was not actually produced. Use `references/failure-recovery.md` whenever a source, figure, or deliverable cannot be produced cleanly.
 
 ### When the user asks for slide advice only
 
@@ -466,7 +678,17 @@ Output:
 
 ### When the user asks to redesign one page
 
-Output a 16:9 PPT-ready page image if possible. Keep the scientific visuals real and sourced from the user-provided material.
+Output one Image2-style 16:9 full-slide page image if Image2-style generation is available. Keep the scientific visuals real and sourced from the user-provided material.
+
+If Image2-style generation is not available, output only:
+
+1. diagnosis of the current page;
+2. revised one-sentence claim;
+3. real figure placement plan;
+4. corrected Chinese slide copy;
+5. Image2 prompt for the redesigned page.
+
+Do not create the redesigned page with Python, HTML, CSS, React, SVG, canvas, browser screenshots, Matplotlib, Pillow, or editable PowerPoint objects.
 
 ## Required Checklist
 
@@ -483,6 +705,10 @@ Use `references/high-quality-production-protocol.md` when the user asks for maxi
 Use `references/generation-brief-template.md` before building a full deck.
 
 Use `references/page-brief-template.md` before generating each image2 page.
+
+Use `references/image2-execution-gate.md` before any final image or PPTX production attempt.
+
+Run `scripts/validate_image_only_pptx.py` before delivering any PPTX.
 
 Use `references/main-si-crosswalk.md` to connect main-paper claims with SI support.
 

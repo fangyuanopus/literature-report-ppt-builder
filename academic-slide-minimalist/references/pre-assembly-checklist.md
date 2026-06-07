@@ -11,6 +11,8 @@ Pass only if:
 - every slide has a page brief;
 - every scientific figure appears in `figure_source_manifest.md`;
 - every planned slide has an accepted image in `image2_pages_unified_final/`;
+- `image2_manifest.json` exists and lists every final image;
+- every manifest entry has `generation_route: "image2_full_slide"` and `accepted: true`;
 - filenames are sequential and match final page numbers;
 - each image is 16:9;
 - each normal slide has the correct navigation bar and active highlight;
@@ -20,7 +22,7 @@ Pass only if:
 
 ## Fail Actions
 
-If any check fails, do not assemble the final PPT yet. Fix the affected image, page brief, or order map first.
+If any check fails, do not assemble the final PPT yet. Fix the affected image, page brief, order map, or manifest first. If Image2 availability is not confirmed, stop before PPTX creation and deliver only page briefs, prompts, and assembly notes.
 
 ## Minimal Report
 

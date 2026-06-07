@@ -17,6 +17,7 @@ When the user asks for the best possible result, strongest model, full workflow,
 ```text
 final_presentation.pptx
 image2_pages.zip
+image2_manifest.json
 figure_source_manifest.md
 paper_logic_tree.md
 terminology_table.md
@@ -34,11 +35,15 @@ editable_presentation.pptx (only if requested/produced)
 
 ### final_presentation.pptx
 
-The assembled PPT, with each image2 page inserted full-slide.
+The assembled PPT, with each accepted Image2 page inserted full-slide. Deliver this only after `image2_manifest.json` exists and `scripts/validate_image_only_pptx.py` passes.
 
 ### image2_pages.zip
 
 All generated 16:9 page images in final slide order.
+
+### image2_manifest.json
+
+A machine-checkable record that Image2-style full-slide generation was confirmed and that every delivered slide image used `generation_route: "image2_full_slide"` and `accepted: true`.
 
 ### figure_source_manifest.md
 
@@ -73,8 +78,9 @@ A final checklist report using `quality-gates.md`, including any unresolved limi
 Prioritize deliverables in this order:
 
 ```text
-1. final_presentation.pptx
-2. figure_source_manifest.md
+1. final_presentation.pptx, only if Image2 and validation gates passed
+2. image2_manifest.json, required when PPTX is delivered
+3. figure_source_manifest.md
 3. page_briefs.md
 4. speaker_notes.md
 5. quality_check_report.md

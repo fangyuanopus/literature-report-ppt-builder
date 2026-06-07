@@ -1,7 +1,8 @@
 interface:
   display_name: Academic Slide Minimalist
-  short_description: Creates clear literature-report PPTs from real paper figures
-    using real paper/SI figures and a sample-deck image2 workflow.
+  short_description: Creates academic PPTs from real paper/SI figures with gated Image2-only full-slide production.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
 policy:
   products:
   - chatgpt
