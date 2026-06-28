@@ -22,7 +22,7 @@ Pass only if:
 
 ## Fail Actions
 
-If any check fails, do not assemble the final PPT yet. Fix the affected image, page brief, order map, or manifest first. If Image2 availability is not confirmed, stop before PPTX creation and deliver only page briefs, prompts, and assembly notes.
+If any check fails, do not assemble the Image2-only final PPT yet. Fix the affected image, page brief, order map, or manifest first. If Image2 availability is not confirmed, stop before Image2-only PPTX creation and ask whether the user accepts a clearly labeled fallback PPTX based on `assets/sample-literature-report.pptx`. Without explicit fallback consent, deliver only page briefs, prompts, and assembly notes.
 
 ## Minimal Report
 

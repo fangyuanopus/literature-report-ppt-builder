@@ -67,7 +67,7 @@ Pass only if:
 - every final image path in the manifest exists;
 - no page image was produced by Python, Pillow, Matplotlib, HTML/CSS, SVG/canvas, browser screenshots, editable PowerPoint layouts, templates, or rasterized editable slides.
 
-If this gate fails, do not deliver a PPTX. Deliver only reading outputs, page briefs, Image2 prompts, and assembly notes.
+If this gate fails, do not deliver an Image2-only PPTX. Explain the boundary and ask whether the user accepts a clearly labeled lower-fidelity fallback PPTX based on `assets/sample-literature-report.pptx`. Without explicit fallback consent, deliver only reading outputs, page briefs, Image2 prompts, and assembly notes.
 
 ## Gate 6: Final PPT Assembly Gate
 
@@ -80,6 +80,25 @@ Pass only if:
 - navigation active section and page numbers are consistent;
 - no slide is blank, duplicated by accident, or missing from the page count;
 - the final PPTX opens and contains the expected number of slides.
+
+## Gate 6.5: Fallback Template PPTX Gate
+
+Use this gate only when Image2 is unavailable and the user explicitly accepted fallback output.
+
+Pass only if:
+
+- `assets/sample-literature-report.pptx` was used as the template/style/rhythm source;
+- the deck is grounded in the current paper, SI, or user-provided real source figures;
+- no mock figure, invented scientific chart, decorative scientific diagram, or sample-deck scientific content is used as evidence;
+- `figure_source_manifest.md` lists every figure used in the fallback deck;
+- normal content pages use the main canvas deliberately and are not sparse card-only layouts;
+- template cleanup removed old sample scientific content, empty placeholders, and unused shapes that occupy figure or text space;
+- navigation follows the sample deck's quiet academic style and is not rendered as oversized generic UI buttons;
+- figure-led pages have a dominant readable figure region with no empty card or leftover shape sitting below the figure;
+- rendered QA or equivalent visual inspection found no unintended text overlap, clipping, unreadable figures, or navigation/page-number collisions;
+- the final response clearly states that Image2-only validation is not applicable.
+
+If this gate fails, do not deliver the fallback PPTX as a formal literature-report deck. Fix the layout/source problem or deliver planning artifacts only.
 
 ## Gate 7: Claim Calibration Gate
 

@@ -1,6 +1,6 @@
 # Editable Output Options
 
-Use this reference when deciding whether to output an image-based deck, editable deck, or both.
+Use this reference when deciding whether to output an image-based deck, editable deck, fallback deck, or a hybrid package.
 
 ## Default
 
@@ -14,7 +14,7 @@ This preserves layout stability and matches the user's preferred workflow.
 
 ## Optional Editable Versions
 
-Only create editable versions when the user asks or when it is clearly useful.
+Only create editable versions when the user asks, or when Image2 is unavailable and the user explicitly accepts a lower-fidelity fallback PPTX. Fallback editable decks must use the bundled `assets/sample-literature-report.pptx` as the template/style/rhythm source.
 
 ### Stable presentation deck
 
@@ -29,6 +29,13 @@ Only create editable versions when the user asks or when it is clearly useful.
 - Scientific figures still must be real source images, not redrawn substitutes.
 - Use this when the user likely needs to revise wording manually.
 
+### Fallback editable deck
+
+- Filename suggestion: `editable_fallback_presentation.pptx`
+- Use only when Image2 is unavailable and the user explicitly accepts fallback output.
+- Use the bundled `assets/sample-literature-report.pptx` template; preserve its academic red-black-gray rhythm, title hierarchy, navigation behavior, and page-number/footer conventions as much as feasible.
+- Clearly state that this is not the authoritative Image2-only deck and does not pass Image2 manifest validation.
+
 ### Hybrid package
 
 - Provide both stable and editable versions if time/tooling allows.
@@ -37,4 +44,4 @@ Only create editable versions when the user asks or when it is clearly useful.
 
 ## Caution
 
-Do not promise an editable deck unless it was actually created. If only the image2-based deck is produced, state that clearly.
+Do not promise an editable deck unless it was actually created. If only the image2-based deck is produced, state that clearly. If a fallback deck is produced, label it as template-based fallback output and do not imply Image2-only validation.

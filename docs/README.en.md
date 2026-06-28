@@ -15,9 +15,23 @@ The core principle is simple: **clarity before beauty, real evidence before visu
 
 ---
 
+## Important: Image2 and Fallback Delivery
+
+The default high-quality delivery path depends on an Image2-style full-slide generation backend: generate complete 16:9 slide images first, then package accepted pages into a PPTX.
+
+If the current Codex / Claude Code environment cannot confirm an available Image2-style backend, the skill will not pretend to create a high-fidelity Image2-only PPTX. It will first ask whether you accept a lower-fidelity fallback PPTX:
+
+- If you do not accept fallback output, it will deliver `deck_order_map.md`, `figure_source_manifest.md`, `page_briefs.md`, Image2 prompts, and assembly notes so the deck can be continued later in an Image2-capable environment.
+- If you explicitly accept fallback output, it will create an editable fallback PPTX based on the existing `assets/sample-literature-report.pptx` template, page rhythm, and red/black/gray academic style. The file will be clearly labeled as a fallback version and will not claim Image2 manifest or image-only validation.
+- A fallback PPTX must still be grounded in the current paper, SI, and real user-provided/source figures. Without real paper content and real images, the skill should deliver planning artifacts or ask for the missing sources instead of creating a formal literature-report deck.
+
+---
+
 ## Demo
 
 The pages below are exported from `academic-slide-minimalist/assets/sample-literature-report.pptx`. They show the intended deck style: real paper figures, conclusion-style titles, restrained red/black/gray academic design, consistent navigation, and traceable evidence.
+
+Note: this sample PPT is an editable style and rhythm reference, not an Image2-only final-delivery sample, so it is not expected to pass `validate_image_only_pptx.py`.
 
 ![Literature report demo 1](images/demo-slide-01-title.jpg)
 ![Literature report demo 2](images/demo-slide-02-evidence.jpg)
@@ -89,7 +103,7 @@ Algorithm, biology, computational, and review papers can use different navigatio
 
 The default output is image-first: each slide is generated as a complete 16:9 page image, then inserted into PPTX. This reduces layout drift, font substitution, misplaced elements, and cross-device rendering problems.
 
-Editable output is treated as a separate mode and is used only when explicitly requested.
+Editable output is treated as a separate mode and is used only when explicitly requested, or when Image2 is unavailable and the user explicitly accepts a fallback version based on the bundled sample template. A fallback deck must not be presented as an Image2-only high-fidelity deck.
 
 ### 5. Quality gates and Q&A preparation
 
@@ -199,7 +213,7 @@ final_delivery_preview.md
 final_presentation.pptx
 ```
 
-The default final deliverable is a stable image-first PPTX. For complex tasks, keep `figure_source_manifest.md` and `deck_order_map.md` so every figure and claim can be traced back before the presentation.
+The default final deliverable is a stable image-first PPTX. If the current environment has no available Image2-style backend, the skill will first ask whether you accept a fallback PPTX; without explicit consent, it delivers only page plans, figure manifests, page briefs, Image2 prompts, and assembly notes. If fallback is accepted, the PPTX is generated from the existing `assets/sample-literature-report.pptx` template and must be checked for text overlap, clipping, sparse layouts, and figure readability before delivery. For complex tasks, keep `figure_source_manifest.md` and `deck_order_map.md` so every figure and claim can be traced back before the presentation.
 
 ---
 
@@ -244,6 +258,7 @@ docs/
 | `adaptive-navigation.md` | Domain-specific navigation design |
 | `deck-order-map.md` | Page order, section, title, source figures, and backup state |
 | `figure-source-manifest.md` | Source tracking for every figure and claim |
+| `fallback-template-pptx.md` | Template-based fallback PPTX, real-source, and layout QA rules when Image2 is unavailable |
 | `page-brief-template.md` | Page brief before generation |
 | `quality-gates.md` | Final quality checks |
 | `question-prep.md` | Advisor/teacher Q&A preparation |
