@@ -215,7 +215,7 @@ final_delivery_preview.md
 final_presentation.pptx
 ```
 
-默认最终交付是稳定的 image-first PPTX。若当前环境没有可用 Image2-style 后端，skill 会先询问是否接受降级 PPTX；未获得明确同意时，只交付页面方案、图源清单、page briefs、Image2 prompts 和 assembly notes。若接受降级，fallback PPTX 会按现有 `assets/sample-literature-report.pptx` 模板生成，并在交付前检查文字重叠、内容溢出、页面过空和图像可读性。复杂任务也建议保留 `figure_source_manifest.md` 和 `deck_order_map.md`，方便答辩前回查每一页图和结论来自哪里。
+默认最终交付是稳定的 image-first PPTX。若当前环境没有可用 Image2-style 后端，skill 会先询问是否接受降级 PPTX；未获得明确同意时，只交付页面方案、图源清单、page briefs、Image2 prompts 和 assembly notes。若接受降级，fallback PPTX 必须基于现有 `assets/sample-literature-report.pptx` 与 `references/sample-template-slot-manifest.json` 复制源模板页并替换继承 slot，而不是用代码仿画模板坐标；交付前还要检查文字重叠、内容溢出、页面过空和图像可读性。复杂任务也建议保留 `figure_source_manifest.md` 和 `deck_order_map.md`，方便答辩前回查每一页图和结论来自哪里。
 
 ---
 
@@ -228,9 +228,17 @@ academic-slide-minimalist/
     openai.yaml
   assets/
     sample-literature-report.pptx
+  scripts/
+    audit_fallback_template_pptx.py
+    build_fallback_template_pptx.py
+    draft_fallback_edit_plan.py
+    extract_template_slot_manifest.py
+    prepare_fallback_figure.py
   references/
     close-reading-rules.md
     paper-to-ppt-workflow.md
+    sample-template-intro.md
+    sample-template-slot-manifest.json
     adaptive-navigation.md
     deck-order-map.md
     figure-source-manifest.md
@@ -261,6 +269,12 @@ docs/
 | `deck-order-map.md` | 锁定页序、章节、标题、图源和 backup 状态 |
 | `figure-source-manifest.md` | 记录每张图来自哪里、支撑什么结论 |
 | `fallback-template-pptx.md` | 无 Image2 时的模板化 fallback PPTX、真实图源和布局 QA 规则 |
+| `fallback-template-edit-spec.md` | 无 Image2 fallback 的模板槽位清单、选页映射、继承对象替换和容量检查契约 |
+| `sample-template-intro.md` | 样板 PPT 的风格、页角色、选页和 slot 使用说明 |
+| `sample-template-slot-manifest.json` | 从样板 PPT 提取的 source slide、文本/图片 slot、坐标、容量和替换规则 |
+| `scripts/draft_fallback_edit_plan.py` | 从结构化 slide briefs 草拟 `fallback_edit_plan.json`，自动选择模板页和继承 slot |
+| `scripts/build_fallback_template_pptx.py` | 按 `fallback_edit_plan.json` 复制/裁剪模板页并替换继承 slot，输出 fallback PPTX 与 build report |
+| `scripts/audit_fallback_template_pptx.py` | 在渲染器不可用时执行结构化 QA，检查页数、构建警告和明显样板科学内容残留 |
 | `page-brief-template.md` | 每页生成前的页面 brief |
 | `quality-gates.md` | 最终质检标准 |
 | `question-prep.md` | 准备老师/导师可能追问的问题 |

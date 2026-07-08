@@ -213,7 +213,7 @@ final_delivery_preview.md
 final_presentation.pptx
 ```
 
-The default final deliverable is a stable image-first PPTX. If the current environment has no available Image2-style backend, the skill will first ask whether you accept a fallback PPTX; without explicit consent, it delivers only page plans, figure manifests, page briefs, Image2 prompts, and assembly notes. If fallback is accepted, the PPTX is generated from the existing `assets/sample-literature-report.pptx` template and must be checked for text overlap, clipping, sparse layouts, and figure readability before delivery. For complex tasks, keep `figure_source_manifest.md` and `deck_order_map.md` so every figure and claim can be traced back before the presentation.
+The default final deliverable is a stable image-first PPTX. If the current environment has no available Image2-style backend, the skill will first ask whether you accept a fallback PPTX; without explicit consent, it delivers only page plans, figure manifests, page briefs, Image2 prompts, and assembly notes. If fallback is accepted, the PPTX must duplicate source slides from `assets/sample-literature-report.pptx` using `references/sample-template-slot-manifest.json` and replace inherited slots, not redraw approximate template coordinates in code. It must be checked for text overlap, clipping, sparse layouts, and figure readability before delivery. For complex tasks, keep `figure_source_manifest.md` and `deck_order_map.md` so every figure and claim can be traced back before the presentation.
 
 ---
 
@@ -226,9 +226,17 @@ academic-slide-minimalist/
     openai.yaml
   assets/
     sample-literature-report.pptx
+  scripts/
+    audit_fallback_template_pptx.py
+    build_fallback_template_pptx.py
+    draft_fallback_edit_plan.py
+    extract_template_slot_manifest.py
+    prepare_fallback_figure.py
   references/
     close-reading-rules.md
     paper-to-ppt-workflow.md
+    sample-template-intro.md
+    sample-template-slot-manifest.json
     adaptive-navigation.md
     deck-order-map.md
     figure-source-manifest.md
@@ -259,6 +267,12 @@ docs/
 | `deck-order-map.md` | Page order, section, title, source figures, and backup state |
 | `figure-source-manifest.md` | Source tracking for every figure and claim |
 | `fallback-template-pptx.md` | Template-based fallback PPTX, real-source, and layout QA rules when Image2 is unavailable |
+| `fallback-template-edit-spec.md` | Slot manifest, slide mapping, inherited-object replacement, and capacity checks for no-Image2 fallback |
+| `sample-template-intro.md` | Human-readable style, page-role, selection, and slot-use guidance for the sample PPTX |
+| `sample-template-slot-manifest.json` | Extracted source slides, text/image slots, coordinates, capacities, and replacement rules from the sample deck |
+| `scripts/draft_fallback_edit_plan.py` | Draft `fallback_edit_plan.json` from structured slide briefs by selecting template pages and inherited slots |
+| `scripts/build_fallback_template_pptx.py` | Build fallback PPTX and build report from `fallback_edit_plan.json` by pruning template slides and replacing inherited slots |
+| `scripts/audit_fallback_template_pptx.py` | Structural QA fallback when rendering is unavailable; checks slide count, build warnings, and obvious sample scientific residue |
 | `page-brief-template.md` | Page brief before generation |
 | `quality-gates.md` | Final quality checks |
 | `question-prep.md` | Advisor/teacher Q&A preparation |

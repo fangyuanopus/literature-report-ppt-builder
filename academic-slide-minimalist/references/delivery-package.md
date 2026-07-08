@@ -10,7 +10,7 @@ Return at least:
 final_presentation.pptx
 ```
 
-If Image2-style generation is unavailable, do not treat `final_presentation.pptx` as available. First ask whether the user accepts a lower-fidelity fallback PPTX. Without explicit consent, return the planning artifacts instead. With explicit consent, create a template-based fallback using `assets/sample-literature-report.pptx` and use a clearly labeled filename such as `fallback_presentation.pptx` or `editable_fallback_presentation.pptx`.
+If Image2-style generation is unavailable, do not treat `final_presentation.pptx` as available. First ask whether the user accepts a lower-fidelity fallback PPTX. Without explicit consent, return the planning artifacts instead. With explicit consent, create a template-following fallback using `assets/sample-literature-report.pptx`: inspect the template, select and duplicate source slides, and replace inherited slots. Use a clearly labeled filename such as `fallback_presentation.pptx` or `editable_fallback_presentation.pptx`.
 
 ## Maximum-Quality Delivery
 
@@ -41,7 +41,7 @@ The assembled PPT, with each accepted Image2 page inserted full-slide. Deliver t
 
 ### fallback_presentation.pptx / editable_fallback_presentation.pptx
 
-A lower-fidelity PPTX produced only after the user explicitly accepts fallback output when Image2 is unavailable. It must adapt the bundled `assets/sample-literature-report.pptx` template/style/rhythm rather than using an unrelated freeform layout. It may contain editable elements, but scientific figures must still come from real paper/SI/user-provided sources. Do not claim that a fallback deck passed Image2 manifest or image-only validation. Deliver it only after render/layout QA has checked text overlap, clipping, sparse pages, and figure readability.
+A lower-fidelity PPTX produced only after the user explicitly accepts fallback output when Image2 is unavailable. It must follow the bundled `assets/sample-literature-report.pptx` by duplicating or pruning mapped source slides and replacing inherited text/image/table slots rather than using an unrelated freeform layout or a hand-redrawn approximation. Use `scripts/build_fallback_template_pptx.py` when possible and deliver its `fallback_build_report.json` alongside the deck. It may contain editable elements, but scientific figures must still come from real paper/SI/user-provided sources. Do not claim that a fallback deck passed Image2 manifest or image-only validation. Deliver it only after the slot/edit plan, figure manifest, render/layout QA, overflow checks, and placeholder cleanup are complete.
 
 ### image2_pages.zip
 
@@ -85,15 +85,16 @@ Prioritize deliverables in this order:
 
 ```text
 1. final_presentation.pptx, only if Image2 and validation gates passed
-2. fallback_presentation.pptx, only if Image2 is unavailable, the user explicitly accepts fallback output, and the bundled sample template is used
+2. fallback_presentation.pptx, only if Image2 is unavailable, the user explicitly accepts fallback output, and the bundled sample template is used through template inspection, source-slide duplication, and inherited-slot replacement
 3. image2_manifest.json, required when Image2-only PPTX is delivered
 4. figure_source_manifest.md
 5. page_briefs.md
-6. quality_check_report.md, required for fallback PPTX and should include render/layout QA status
-7. speaker_notes.md
-8. possible_questions.md
-9. image2_pages.zip
-10. editable_presentation.pptx, only if requested
+6. fallback_build_report.json, required when `scripts/build_fallback_template_pptx.py` is used
+7. quality_check_report.md, required for fallback PPTX and should include slot/edit-plan status, render/layout QA status, overflow status, and placeholder cleanup status
+8. speaker_notes.md
+9. possible_questions.md
+10. image2_pages.zip
+11. editable_presentation.pptx, only if requested
 ```
 
 Do not claim a deliverable was produced if it was not produced.
@@ -115,7 +116,7 @@ Backup slide plan or actual backup slides for methods, controls, full figure pan
 
 Optional editable deck. Produce only when requested or feasible. The image2-based stable deck remains the authoritative presentation version.
 
-When Image2 is unavailable, editable output is allowed only as user-approved fallback output, must use the bundled sample template, and must be labeled accordingly.
+When Image2 is unavailable, editable output is allowed only as user-approved fallback output, must use the bundled sample template through the fallback template edit spec, and must be labeled accordingly.
 
 ## Delivery Honesty
 

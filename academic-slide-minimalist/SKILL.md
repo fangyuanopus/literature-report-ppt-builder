@@ -1,7 +1,7 @@
 ---
 name: academic-slide-minimalist
 description: >
-  Use this skill for Chinese academic literature-report PPTs, research slides, journal-club decks, thesis-defense slides, slide page images, or paper-to-PPT workflows based on real paper/SI figures. It enforces an Image2 availability gate: only an Image2-style native 16:9 full-slide image backend may create authoritative final pages. If unavailable or unconfirmed, stop before Image2-only PPTX creation and ask whether the user accepts a clearly labeled fallback PPTX. Fallback PPTX output is allowed only after explicit consent and must be template-based using the bundled assets/sample-literature-report.pptx style/rhythm/template; never produce an ad hoc freeform code-rendered deck as fallback.
+  Use this skill for Chinese academic literature-report PPTs, research slides, journal-club decks, thesis-defense slides, slide page images, or paper-to-PPT workflows based on real paper/SI figures. It enforces an Image2 availability gate: only an Image2-style native 16:9 full-slide image backend may create authoritative final pages. If unavailable or unconfirmed, stop before Image2-only PPTX creation and ask whether the user accepts a clearly labeled fallback PPTX. Fallback PPTX output is allowed only after explicit consent and must follow the bundled assets/sample-literature-report.pptx through a template-inspect, slide-duplicate, inherited-object-edit workflow; never produce an ad hoc freeform code-rendered deck or a hand-redrawn template approximation as fallback.
 ---
 
 # Academic Slide Minimalist
@@ -80,7 +80,7 @@ Fallback PPTX creation is allowed only after all of these are true:
 - Image2-style full-slide generation is unavailable, unclear, unconfirmed, or blocked;
 - the user has been shown the boundary statement above;
 - the user explicitly chooses the fallback route or otherwise clearly states that a lower-fidelity PPTX is acceptable;
-- the fallback deck uses the bundled `assets/sample-literature-report.pptx` as the template/style/rhythm source;
+- the fallback deck uses the bundled `assets/sample-literature-report.pptx` through a template-following workflow: inspect the sample deck, map every output slide to a source slide, duplicate the mapped slides, then edit inherited objects rather than drawing a parallel layout;
 - the fallback deck is grounded in the current main paper, SI, or user-provided source figures; do not use mock figures, decorative substitutes, or scientific content copied from the sample deck;
 - the fallback deck passes a render-based layout QA pass with no unintended overlaps, no clipped text, and no sparse pages that use only a small fraction of the slide canvas;
 - the fallback deck has no unused template placeholders or leftover shapes occupying figure/text space;
@@ -112,11 +112,31 @@ Never imply that the fallback PPTX satisfies Gates B-D. If the user does not acc
 
 When producing a fallback PPTX, use the bundled `assets/sample-literature-report.pptx` as the required template source. Preserve its 16:9 format, red-black-gray academic tone, title hierarchy, navigation rhythm, figure/caption treatment, and page-number/footer habits as much as the fallback tooling allows.
 
-The fallback deck may be editable and may contain PowerPoint text boxes, shapes, and normal picture objects. Code may be used to clone template slides, inspect placeholder geometry, replace text, insert real source figures, add navigation labels, and assemble the new deck. Code must not create a generic freeform deck unrelated to the bundled sample template.
+The fallback deck may be editable and may contain PowerPoint text boxes, shapes, and normal picture objects, but it must not be a hand-redrawn imitation of the template. Use a strict template-following workflow:
+
+1. inspect all slides in `assets/sample-literature-report.pptx`;
+2. use `references/sample-template-slot-manifest.json` as the bundled template slot reference, or regenerate it with `scripts/extract_template_slot_manifest.py` if the sample PPTX changes;
+3. choose a source slide for every output slide;
+4. create a `fallback_edit_plan.json` or `template-frame-map.json` that lists each source slide and explicit edit targets;
+5. duplicate the mapped source slides into a starter deck;
+6. prepare every real source figure with `scripts/prepare_fallback_figure.py` or an equivalent deterministic crop step before insertion, and record `prepared_figure_manifest.json`;
+7. edit inherited text, image, table, and placeholder objects in place while preserving their original position, size, typography, crop, and frame treatment;
+8. replace sample scientific content only with current paper/SI/user-provided content;
+9. render the result and check overlap, clipping, sparse layout, placeholder leftovers, off-center/margin-dominated figures, and inherited-template overflow.
+
+Use `scripts/draft_fallback_edit_plan.py` to create a first-pass `fallback_edit_plan.json` from structured slide briefs when no hand-authored plan exists. Then use `scripts/build_fallback_template_pptx.py` for fallback construction when possible. The builder accepts the edit plan, applies inherited slot edits from `references/sample-template-slot-manifest.json`, prepares source figures, emits `prepared_figure_manifest.json`, and writes a build report with overflow, ellipsis, untouched-slot, and image-preparation warnings. If this builder reports `status: "needs_review"`, fix the plan/content before delivery.
+
+Fallback image placement must be figure-aware, not a rigid slot fill. The draft plan should profile each real paper figure or table by aspect ratio, density, and layout hint. When a wide table, wide plot, or dense multi-panel figure does not fit a single inherited image slot, the edit plan may use `fit_strategy: "adaptive_contain"` and `frame_scope: "all_image_slots"` to merge inherited image slots into one larger figure region. This is allowed only inside the mapped template slide's inherited image area and must not redraw the page from scratch, stretch the scientific image, or crop away scientific content.
+
+For literature-report fallback decks, every content slide should include at least one real paper/SI/user-provided scientific figure, table, or source crop unless it is a true cover, ending, section divider, or explicitly documented logic-only transition. Do not let background, method, result, application, or summary pages become generic text-only slides when relevant real figures or tables are available.
+
+Do not build fallback pages with a fresh freeform layout engine, generic card grid, oversized UI navigation, or new PowerPoint objects over the copied template when an inherited source object should be edited instead. If the tooling cannot identify editable targets or cleanly replace inherited objects, stop with planning artifacts instead of delivering a loosely redrawn deck.
 
 Never copy the sample deck's scientific content into a new paper deck. Treat `assets/sample-literature-report.pptx` as a template/style source only; all scientific figures, claims, captions, and conclusions must come from the current paper, SI, or user-provided material.
 
-Read `references/fallback-template-pptx.md` before creating any fallback PPTX.
+Read `references/sample-template-intro.md`, `references/fallback-template-pptx.md`, `references/fallback-template-edit-spec.md`, and `references/sample-template-slot-manifest.json` before creating any fallback PPTX.
+
+The fallback workflow should mirror the useful contract of `gorden-ppt-skill`: use slot IDs or explicit object addresses, preserve template typography and same-level font sizes, respect capacity hints, rewrite overly long text instead of shrinking individual boxes, and keep every output slide traceable to a source template slide.
 
 ## Core Mission
 
@@ -162,7 +182,7 @@ Allowed code usage is mechanical only:
 - package accepted full-slide images into an image-only PPTX;
 - check slide count, aspect ratio, ordering, filenames, and whether editable elements exist.
 
-Code must never be used to design or render the authoritative Image2-only final slide page. If the user explicitly accepts a fallback PPTX, code or editable PowerPoint construction may be used only to fill or adapt the bundled sample-template style for that clearly labeled fallback deck, while still preserving real scientific figures and honest delivery labeling.
+Code must never be used to design or render the authoritative Image2-only final slide page. If the user explicitly accepts a fallback PPTX, code or editable PowerPoint construction may be used only to inspect the bundled template, duplicate selected template slides, and replace inherited template slots for that clearly labeled fallback deck, while still preserving real scientific figures and honest delivery labeling. Code must not hand-redraw a slide from approximate template coordinates.
 
 ## Non-Negotiable Scientific Rule
 
@@ -249,7 +269,7 @@ For any full-deck or multi-batch image2 task, control the deck as a single prese
 5. Use real scientific figures only. Do not add decorative vector icons or invented diagrams. Only annotate real figures with boxes, arrows, shaded regions, zoom windows, labels, and key-number callouts. Follow `references/real-figure-annotation-rules.md` and `references/trend-emphasis-rules.md`.
 6. Track generation status for every slide. Do not guess which pages are complete; keep `image_generation_status.md`. Follow `references/image-generation-status.md`.
 7. Assemble the PPT only from the final approved image folder. Follow `references/version-control-and-final-folder.md`, `references/pre-assembly-checklist.md`, and `references/post-assembly-render-audit.md`.
-8. Authoritative final slide pages must be Image2-style full-slide images only. Code may support extraction, cropping, file naming, contact sheets, QA, compression, and image-only PPTX packaging, but code must not design or render the Image2-only final slide pages. If no Image2-style full-slide generation route is available, ask whether the user accepts a clearly labeled fallback PPTX before producing any substitute. If accepted, build the fallback from `assets/sample-literature-report.pptx`, not from a freeform code layout. Follow `references/fallback-template-pptx.md` for source-grounding, density, and layout QA rules.
+8. Authoritative final slide pages must be Image2-style full-slide images only. Code may support extraction, cropping, file naming, contact sheets, QA, compression, and image-only PPTX packaging, but code must not design or render the Image2-only final slide pages. If no Image2-style full-slide generation route is available, ask whether the user accepts a clearly labeled fallback PPTX before producing any substitute. If accepted, build the fallback from `assets/sample-literature-report.pptx`, not from a freeform code layout. Follow `references/fallback-template-pptx.md` for source-grounding, density, and layout QA rules, and follow `references/fallback-template-edit-spec.md` for the slot manifest, slide mapping, inherited-object replacement, and capacity checks.
 
 
 ## Iterative Refinement and Diagnosis Mode
@@ -759,6 +779,8 @@ Use `references/image2-execution-gate.md` before any final image or PPTX product
 Run `scripts/validate_image_only_pptx.py` before delivering any PPTX.
 
 Use `references/fallback-template-pptx.md` before creating any non-Image2 fallback PPTX.
+
+Use `references/fallback-template-edit-spec.md` before editing, replacing, or adding any object in a non-Image2 fallback PPTX.
 
 Use `references/main-si-crosswalk.md` to connect main-paper claims with SI support.
 

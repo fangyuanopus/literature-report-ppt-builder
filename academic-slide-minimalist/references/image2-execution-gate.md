@@ -4,7 +4,7 @@ Use this reference before any final slide image or PPTX production attempt.
 
 ## Purpose
 
-This gate prevents the skill from silently falling back to code-rendered slides, editable PowerPoint layouts, screenshots, or templates when Image2-style full-slide generation is unavailable. A fallback PPTX may be created only after the user explicitly accepts the lower-fidelity fallback route, and it must use the bundled `assets/sample-literature-report.pptx` as the template/style source.
+This gate prevents the skill from silently falling back to code-rendered slides, editable PowerPoint layouts, screenshots, or templates when Image2-style full-slide generation is unavailable. A fallback PPTX may be created only after the user explicitly accepts the lower-fidelity fallback route, and it must use the bundled `assets/sample-literature-report.pptx` through template inspection, source-slide duplication, and inherited-slot replacement.
 
 ## Gate A: Backend availability
 
@@ -49,7 +49,7 @@ fallback_presentation.pptx
 editable_fallback_presentation.pptx
 ```
 
-Do not call this fallback deck `final_presentation.pptx` unless the user explicitly requests that filename. Do not claim it passed Image2 manifest or image-only validation. Do not create an unrelated freeform deck; preserve the bundled sample's 16:9 format, red-black-gray academic tone, navigation rhythm, title hierarchy, and page-number/footer conventions as much as the tooling allows.
+Do not call this fallback deck `final_presentation.pptx` unless the user explicitly requests that filename. Do not claim it passed Image2 manifest or image-only validation. Do not create an unrelated freeform deck or a hand-redrawn approximation of the template. Inspect the bundled sample, map every output slide to a source slide, duplicate those slides, and edit inherited text/image/table slots while preserving the sample's 16:9 format, red-black-gray academic tone, navigation rhythm, title hierarchy, and page-number/footer conventions.
 
 ## Gate B: Manifest requirement
 
@@ -113,4 +113,5 @@ Image2-only validation: not applicable
 Scientific visuals: real paper/SI/user-provided figures only
 Editable or code-rendered elements may exist: yes
 Template source: assets/sample-literature-report.pptx
+Template-following workflow: inspected, mapped, duplicated, edited inherited objects
 ```

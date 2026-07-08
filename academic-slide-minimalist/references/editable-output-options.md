@@ -14,7 +14,7 @@ This preserves layout stability and matches the user's preferred workflow.
 
 ## Optional Editable Versions
 
-Only create editable versions when the user asks, or when Image2 is unavailable and the user explicitly accepts a lower-fidelity fallback PPTX. Fallback editable decks must use the bundled `assets/sample-literature-report.pptx` as the template/style/rhythm source.
+Only create editable versions when the user asks, or when Image2 is unavailable and the user explicitly accepts a lower-fidelity fallback PPTX. Fallback editable decks must use the bundled `assets/sample-literature-report.pptx` through a template-following workflow: inspect source slides, duplicate mapped slides, and replace inherited slots.
 
 ### Stable presentation deck
 
@@ -33,7 +33,8 @@ Only create editable versions when the user asks, or when Image2 is unavailable 
 
 - Filename suggestion: `editable_fallback_presentation.pptx`
 - Use only when Image2 is unavailable and the user explicitly accepts fallback output.
-- Use the bundled `assets/sample-literature-report.pptx` template; preserve its academic red-black-gray rhythm, title hierarchy, navigation behavior, and page-number/footer conventions as much as feasible.
+- Use the bundled `assets/sample-literature-report.pptx` template by editing inherited text/image/table slots in duplicated source slides; preserve its academic red-black-gray rhythm, title hierarchy, navigation behavior, and page-number/footer conventions.
+- Do not make a freeform editable deck that merely imitates the template colors or approximate coordinates.
 - Clearly state that this is not the authoritative Image2-only deck and does not pass Image2 manifest validation.
 
 ### Hybrid package
