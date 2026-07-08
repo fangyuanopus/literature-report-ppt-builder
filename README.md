@@ -15,9 +15,23 @@
 
 ---
 
+## 重要：Image2 与降级交付
+
+这个 skill 的默认高质量交付依赖 Image2-style 全页幻灯片生成后端：先生成完整 16:9 页面图，再把已验收页面封装进 PPTX。
+
+如果当前 Codex / Claude Code 环境没有确认可用的 Image2-style 后端，skill 不会直接冒充生成高保真 PPTX。它会先询问你是否接受降级版 PPTX：
+
+- 如果你不接受降级，它会交付 `deck_order_map.md`、`figure_source_manifest.md`、`page_briefs.md`、Image2 prompts 和 assembly notes，方便后续在支持 Image2 的环境继续生成。
+- 如果你明确接受降级，它会使用仓库现有 `assets/sample-literature-report.pptx` 的模板、版式节奏和红黑灰学术风格生成可编辑 fallback PPTX；这个版本不声称通过 Image2 manifest 或 image-only 验证。
+- fallback PPTX 仍然必须基于当前论文 / SI / 用户提供的真实图源。没有真实论文内容和真实图片时，不会生成正式文献汇报，只会生成页面方案或要求补充材料。
+
+---
+
 ## 效果演示
 
 下面的页面来自仓库内置样例 `academic-slide-minimalist/assets/sample-literature-report.pptx`，用于展示 skill 追求的页面组织方式：真实论文图、清晰结论句、红黑灰学术风格、导航一致、证据链可讲。
+
+注意：这个样例 PPT 是可编辑的风格和节奏参考，不是 Image2-only 最终交付样例，因此不要求通过 `validate_image_only_pptx.py`。
 
 ![文献汇报样例 1](docs/images/demo-slide-01-title.jpg)
 ![文献汇报样例 2](docs/images/demo-slide-02-evidence.jpg)
@@ -89,7 +103,7 @@ close reading
 
 默认使用 image2 思路：每一页先生成完整 16:9 页面图，再插入 PPTX。这样能最大限度避免文本框跑版、字体替换、元素错位和跨设备渲染问题。
 
-如果用户明确要求可编辑版本，skill 会切换到 editable output 相关流程，但不会假装已经产出可编辑 PPT。
+如果用户明确要求可编辑版本，或在没有 Image2 后端时明确接受降级版本，skill 会切换到基于现有样例模板的 fallback / editable output 相关流程，但不会把降级版假装成 Image2-only 高保真 PPT。
 
 ### 5. 质检和答辩准备
 
@@ -201,7 +215,7 @@ final_delivery_preview.md
 final_presentation.pptx
 ```
 
-默认最终交付是稳定的 image-first PPTX。复杂任务也建议保留 `figure_source_manifest.md` 和 `deck_order_map.md`，方便答辩前回查每一页图和结论来自哪里。
+默认最终交付是稳定的 image-first PPTX。若当前环境没有可用 Image2-style 后端，skill 会先询问是否接受降级 PPTX；未获得明确同意时，只交付页面方案、图源清单、page briefs、Image2 prompts 和 assembly notes。若接受降级，fallback PPTX 必须基于现有 `assets/sample-literature-report.pptx` 与 `references/sample-template-slot-manifest.json` 复制源模板页并替换继承 slot，而不是用代码仿画模板坐标；交付前还要检查文字重叠、内容溢出、页面过空和图像可读性。复杂任务也建议保留 `figure_source_manifest.md` 和 `deck_order_map.md`，方便答辩前回查每一页图和结论来自哪里。
 
 ---
 
@@ -214,9 +228,17 @@ academic-slide-minimalist/
     openai.yaml
   assets/
     sample-literature-report.pptx
+  scripts/
+    audit_fallback_template_pptx.py
+    build_fallback_template_pptx.py
+    draft_fallback_edit_plan.py
+    extract_template_slot_manifest.py
+    prepare_fallback_figure.py
   references/
     close-reading-rules.md
     paper-to-ppt-workflow.md
+    sample-template-intro.md
+    sample-template-slot-manifest.json
     adaptive-navigation.md
     deck-order-map.md
     figure-source-manifest.md
@@ -246,6 +268,13 @@ docs/
 | `adaptive-navigation.md` | 根据领域和证据链生成导航 |
 | `deck-order-map.md` | 锁定页序、章节、标题、图源和 backup 状态 |
 | `figure-source-manifest.md` | 记录每张图来自哪里、支撑什么结论 |
+| `fallback-template-pptx.md` | 无 Image2 时的模板化 fallback PPTX、真实图源和布局 QA 规则 |
+| `fallback-template-edit-spec.md` | 无 Image2 fallback 的模板槽位清单、选页映射、继承对象替换和容量检查契约 |
+| `sample-template-intro.md` | 样板 PPT 的风格、页角色、选页和 slot 使用说明 |
+| `sample-template-slot-manifest.json` | 从样板 PPT 提取的 source slide、文本/图片 slot、坐标、容量和替换规则 |
+| `scripts/draft_fallback_edit_plan.py` | 从结构化 slide briefs 草拟 `fallback_edit_plan.json`，自动选择模板页和继承 slot |
+| `scripts/build_fallback_template_pptx.py` | 按 `fallback_edit_plan.json` 复制/裁剪模板页并替换继承 slot，输出 fallback PPTX 与 build report |
+| `scripts/audit_fallback_template_pptx.py` | 在渲染器不可用时执行结构化 QA，检查页数、构建警告和明显样板科学内容残留 |
 | `page-brief-template.md` | 每页生成前的页面 brief |
 | `quality-gates.md` | 最终质检标准 |
 | `question-prep.md` | 准备老师/导师可能追问的问题 |

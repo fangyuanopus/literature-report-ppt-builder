@@ -67,7 +67,7 @@ Pass only if:
 - every final image path in the manifest exists;
 - no page image was produced by Python, Pillow, Matplotlib, HTML/CSS, SVG/canvas, browser screenshots, editable PowerPoint layouts, templates, or rasterized editable slides.
 
-If this gate fails, do not deliver a PPTX. Deliver only reading outputs, page briefs, Image2 prompts, and assembly notes.
+If this gate fails, do not deliver an Image2-only PPTX. Explain the boundary and ask whether the user accepts a clearly labeled lower-fidelity fallback PPTX based on `assets/sample-literature-report.pptx`. Without explicit fallback consent, deliver only reading outputs, page briefs, Image2 prompts, and assembly notes.
 
 ## Gate 6: Final PPT Assembly Gate
 
@@ -80,6 +80,48 @@ Pass only if:
 - navigation active section and page numbers are consistent;
 - no slide is blank, duplicated by accident, or missing from the page count;
 - the final PPTX opens and contains the expected number of slides.
+
+## Gate 6.5: Fallback Template PPTX Gate
+
+Use this gate only when Image2 is unavailable and the user explicitly accepted fallback output.
+
+Pass only if:
+
+- `assets/sample-literature-report.pptx` was used through a template-following workflow, not as a loose visual inspiration;
+- all source template slides were inspected before choosing layouts;
+- `template_slot_manifest.json` or an equivalent slot manifest records inherited source-slide roles, text/image/table slots, object addresses, capacity hints, figure frames, and template chrome;
+- `fallback_edit_plan.json` or an equivalent edit plan records selected slides, slide mapping, replacement text, replacement figures, keep/delete decisions, and exceptions;
+- `scripts/draft_fallback_edit_plan.py` was used to create the first-pass plan from slide briefs when no hand-authored edit plan existed, or the QA report explains the manual planning route;
+- `fallback_plan_report.json` or an equivalent plan report records source-slide selection, figure-slot fit, mapped edits, deletion count, and planning warnings;
+- every inserted figure/table has a figure profile or equivalent record of aspect ratio/layout hint, and source-slide selection considers that profile rather than only the number of image slots;
+- every non-cover/non-ending content slide uses at least one real paper/SI/user-provided figure, table, or source crop when suitable source visuals are available, or the QA report explains why the slide is intentionally logic-only;
+- `scripts/build_fallback_template_pptx.py` was used when the deck can be expressed as source-slide selection plus inherited slot edits, or the QA report explains why it could not be used;
+- `fallback_build_report.json` or an equivalent build report records text edits, image edits, prepared figures, overflow warnings, ellipsis warnings, image-frame warnings, and untouched replaceable slots;
+- the build report status is `passed`, or every `needs_review` warning has been fixed or explicitly documented as an unresolved limitation;
+- `fallback_structural_audit.json` or an equivalent structural audit exists when visual render QA is unavailable;
+- a rendered contact sheet exists for fallback PPTX visual QA when the local platform can render PPTX pages; on macOS, use `scripts/render_pptx_quicklook_contact_sheet.py`;
+- every output slide is mapped to a source slide in `template-frame-map.json` or an equivalent map;
+- content-bearing slides define explicit inherited-object edit targets; they are not marked preserve-only;
+- mapped source slides were duplicated into a starter deck before editing;
+- inherited text, image, table, caption, footer, navigation, and placeholder objects were edited, replaced, or deleted intentionally while preserving their source position, size, typography, crop, and frame treatment rather than covered by new overlays;
+- new objects are documented exceptions, not the main layout mechanism;
+- the deck is grounded in the current paper, SI, or user-provided real source figures;
+- no mock figure, invented scientific chart, decorative scientific diagram, or sample-deck scientific content is used as evidence;
+- `figure_source_manifest.md` lists every figure used in the fallback deck;
+- `prepared_figure_manifest.json` or an equivalent manifest lists every inserted source figure after deterministic margin trimming/preparation;
+- every inserted paper/SI/user figure uses the prepared crop rather than the raw PDF/screenshot crop when the raw asset has excess margins;
+- rendered QA confirms the actual scientific content inside each image frame is visually centered/readable, not pushed off-center by retained page margins or screenshot borders;
+- wide tables, portrait diagrams, and dense multi-panel figures are placed in regions that match their shape, using documented adaptive placement within inherited image regions when necessary;
+- normal content pages use the main canvas deliberately and are not sparse card-only layouts;
+- template cleanup removed old sample scientific content, empty placeholders, and unused shapes that occupy figure or text space;
+- cleanup did not delete a grouped object that contains a reused real-paper figure, caption, or body text slot;
+- navigation follows the sample deck's quiet academic style and is not rendered as oversized generic UI buttons;
+- figure-led pages have a dominant readable figure region with no empty card or leftover shape sitting below the figure;
+- rendered QA or equivalent visual inspection found no unintended text overlap, clipping, unreadable figures, or navigation/page-number collisions;
+- overflow/canvas-boundary checks pass, or any inherited source-template overflow is fixed, remapped to a cleaner source slide, or explicitly documented as inherited template overflow without new content overflow;
+- the final response clearly states that Image2-only validation is not applicable.
+
+If this gate fails, do not deliver the fallback PPTX as a formal literature-report deck. Fix the layout/source problem or deliver planning artifacts only.
 
 ## Gate 7: Claim Calibration Gate
 
