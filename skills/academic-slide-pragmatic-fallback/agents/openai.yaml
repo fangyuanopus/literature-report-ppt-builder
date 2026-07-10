@@ -1,0 +1,13 @@
+interface:
+  display_name: Academic Slides (Safe Fallback)
+  short_description: Creates evidence-led academic PPTs with clean template and pragmatic fallback routes.
+  default_prompt: Create a Chinese literature-report deck from my paper using real figures; use the pragmatic fallback if Image2 is unavailable.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
