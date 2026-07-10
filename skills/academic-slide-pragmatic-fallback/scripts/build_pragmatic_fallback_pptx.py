@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 from pathlib import Path
 
@@ -25,6 +26,9 @@ SLIDE_W, SLIDE_H = Inches(13.333), Inches(7.5)
 RED, BLACK, GRAY, LIGHT = RGBColor(160, 15, 30), RGBColor(30, 30, 30), RGBColor(105, 105, 105), RGBColor(247, 247, 247)
 FONT = "Microsoft YaHei"
 FORBIDDEN_AUDIENCE_TEXT = ("pragmatic fallback", "editable fallback", "route c", "image2", "模板路径", "构建器")
+PT_PER_CM = 28.3465
+EMU_PER_CM = 360000
+LINE_HEIGHT = 1.2
 
 
 def set_name(shape, name: str) -> None:
@@ -34,6 +38,41 @@ def set_name(shape, name: str) -> None:
 def set_east_asia_font(run) -> None:
     rpr = run._r.get_or_add_rPr()
     rpr.set("ea", FONT)
+
+
+def visual_width(text: str) -> float:
+    """Estimate CJK-aware text width in em units, like a template slot linter."""
+    width = 0.0
+    for char in text:
+        if "\u4e00" <= char <= "\u9fff" or "\u3000" <= char <= "\u303f" or "\uff00" <= char <= "\uffef":
+            width += 1.0
+        elif char == " ":
+            width += 0.35
+        elif char.isascii():
+            width += 0.5
+        else:
+            width += 0.8
+    return width
+
+
+def assert_text_fits(name: str, text: str, width, height, size: float, wrap: bool) -> None:
+    """Reject copy that cannot fit its fixed Route C template slot.
+
+    Route C uses a code-owned but fixed layout.  Treating every text box as a
+    slot prevents one long paragraph from silently breaking the visual rhythm.
+    """
+    if not str(text).strip():
+        return
+    width_pt = width / EMU_PER_CM * PT_PER_CM
+    height_pt = height / EMU_PER_CM * PT_PER_CM
+    chars_per_line = max(1, math.floor(width_pt / size))
+    max_lines = max(1, math.floor(height_pt / (size * LINE_HEIGHT))) if wrap else 1
+    needed_lines = sum(max(1, math.ceil(visual_width(line) / chars_per_line)) for line in str(text).split("\n"))
+    if needed_lines > max_lines:
+        raise ValueError(
+            f"{name} exceeds its fixed layout slot (needs about {needed_lines} lines; "
+            f"capacity is {max_lines}). Rewrite or choose a roomier page type."
+        )
 
 
 def add_rect(slide, name, x, y, w, h, color):
@@ -46,6 +85,7 @@ def add_rect(slide, name, x, y, w, h, color):
 
 
 def add_text(slide, name, text, x, y, w, h, size, color=BLACK, bold=False, align=PP_ALIGN.LEFT, wrap=True):
+    assert_text_fits(name, str(text), w, h, size, wrap)
     box = slide.shapes.add_textbox(x, y, w, h)
     set_name(box, name)
     frame = box.text_frame
@@ -248,15 +288,28 @@ def build(plan: dict, output: Path) -> dict:
     navigation = deck.get("navigation") or []
     if not (3 <= len(navigation) <= 7) or not slides:
         raise ValueError("deck needs 3–7 navigation labels and at least one slide")
+    if len(set(navigation)) != len(navigation) or any(not str(label).strip() for label in navigation):
+        raise ValueError("deck.navigation labels must be non-empty and unique")
+
+    slide_numbers = []
+    for item in slides:
+        try:
+            slide_numbers.append(int(item.get("slide_no", 0)))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("every slide needs a positive integer slide_no") from exc
+    expected_numbers = list(range(1, len(slides) + 1))
+    if slide_numbers != expected_numbers:
+        raise ValueError(f"slide_no values must be sequential 1..{len(slides)} in deck order")
+
     prs = Presentation()
     prs.slide_width, prs.slide_height = SLIDE_W, SLIDE_H
     footer = deck.get("footer", "")
     used_layouts = []
     for item in slides:
         item = dict(item)
-        item["slide_no"] = int(item.get("slide_no", 0))
-        if item["slide_no"] < 1 or not item.get("title"):
-            raise ValueError("every slide needs slide_no and title")
+        item["slide_no"] = int(item["slide_no"])
+        if not item.get("title"):
+            raise ValueError("every slide needs a title")
         validate_copy(item)
         layout = infer_layout(item)
         if layout not in LAYOUTS:

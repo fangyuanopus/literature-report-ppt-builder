@@ -47,7 +47,7 @@ Every displayed scientific figure requires `source_type: figure_crop`, `crop_ver
 ## Page ownership and fit contract
 
 - Choose exactly one owner per slide: inherited template objects in Route B, or generated objects in Route C. Never combine the two.
-- The builder blocks titles over 54 characters and overlong bullet lists rather than allowing overflow. Shorten copy before building.
+- The builder treats every code-owned text box as a fixed template slot: it blocks copy that exceeds the slot's CJK-aware line capacity, as well as titles over 54 characters and overlong bullet lists. Shorten or restructure copy before building; never shrink one page's font or truncate with ellipses.
 - Select the layout from the evidence: use wide figures for plots/tables, right-side figures for portrait images, process flow for 2–5 steps, comparison for two alternatives, and summary rows for 2–5 conclusions/parameters.
 - Do not expose internal route names, template notes, model names, fallback labels, or build instructions in audience-facing slides.
 

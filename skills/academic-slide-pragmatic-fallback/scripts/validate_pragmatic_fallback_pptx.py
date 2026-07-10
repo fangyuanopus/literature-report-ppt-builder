@@ -5,11 +5,51 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 from pathlib import Path
 
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+
+PT_PER_CM = 28.3465
+EMU_PER_CM = 360000
+LINE_HEIGHT = 1.2
+
+
+def visual_width(text: str) -> float:
+    width = 0.0
+    for char in text:
+        if "\u4e00" <= char <= "\u9fff" or "\u3000" <= char <= "\u303f" or "\uff00" <= char <= "\uffef":
+            width += 1.0
+        elif char == " ":
+            width += 0.35
+        elif char.isascii():
+            width += 0.5
+        else:
+            width += 0.8
+    return width
+
+
+def text_overflow(shape) -> str | None:
+    """Return an overflow reason for a fixed Route C text slot, if any."""
+    if not getattr(shape, "has_text_frame", False) or not shape.text.strip():
+        return None
+    runs = [run for paragraph in shape.text_frame.paragraphs for run in paragraph.runs if run.text]
+    sizes = [run.font.size.pt for run in runs if run.font.size is not None]
+    if not sizes:
+        return None
+    size = max(sizes)
+    width_pt = shape.width / EMU_PER_CM * PT_PER_CM
+    height_pt = shape.height / EMU_PER_CM * PT_PER_CM
+    chars_per_line = max(1, math.floor(width_pt / size))
+    wrap = shape.text_frame.word_wrap is not False
+    max_lines = max(1, math.floor(height_pt / (size * LINE_HEIGHT))) if wrap else 1
+    needed_lines = sum(max(1, math.ceil(visual_width(line) / chars_per_line)) for line in shape.text.split("\n"))
+    if needed_lines > max_lines:
+        return f"needs about {needed_lines} lines; slot capacity is {max_lines}"
+    return None
 
 
 def all_shapes(shapes):
@@ -40,6 +80,12 @@ def validate(pptx: Path, plan: dict) -> dict:
         texts = [shape.text.strip() for shape in shapes if getattr(shape, "has_text_frame", False) and shape.text.strip()]
         figures = [name for name in names if name.startswith("AGENT_FIGURE_") and "CAPTION" not in name]
         expected_figures = (expected[index - 1].get("figures") or []) if index <= len(expected) else []
+        expected_slide_no = (expected[index - 1].get("slide_no") if index <= len(expected) else None)
+        page_number_shapes = [shape for shape in shapes if shape.name == "AGENT_PAGE_NUMBER"]
+        if len(page_number_shapes) != 1 or not getattr(page_number_shapes[0], "has_text_frame", False):
+            issues.append(f"slide {index}: missing or duplicated page number")
+        elif page_number_shapes[0].text.strip() != str(expected_slide_no):
+            issues.append(f"slide {index}: page number does not match plan")
         if len([name for name in names if name.startswith("AGENT_NAV_LABEL_")]) != nav_count:
             issues.append(f"slide {index}: duplicated or incomplete navigation")
         if len(figures) != len(expected_figures):
@@ -50,6 +96,9 @@ def validate(pptx: Path, plan: dict) -> dict:
         for shape in shapes:
             if shape.left < 0 or shape.top < 0 or shape.left + shape.width > prs.slide_width or shape.top + shape.height > prs.slide_height:
                 issues.append(f"slide {index}: outside canvas: {shape.name}")
+            overflow = text_overflow(shape)
+            if overflow:
+                issues.append(f"slide {index}: text overflow in {shape.name}: {overflow}")
         for text in texts:
             if re.search(r"\b(?:fig\.?\s*\d+|route\s*[abc]|image2|fallback)\b", text, re.I) and not figures:
                 issues.append(f"slide {index}: unsupported visible internal/figure reference: {text[:80]}")
