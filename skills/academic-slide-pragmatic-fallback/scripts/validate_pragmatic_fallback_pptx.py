@@ -16,6 +16,25 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE
 PT_PER_CM = 28.3465
 EMU_PER_CM = 360000
 LINE_HEIGHT = 1.2
+FONT = "Microsoft YaHei"
+EXPECTED_FONT_SIZES = {
+    "AGENT_NAV_LABEL_": {11},
+    "AGENT_FOOTER": {8},
+    "AGENT_PAGE_NUMBER": {8},
+    "AGENT_TITLE": {24, 30},
+    "AGENT_COVER_TITLE": {34},
+    "AGENT_COVER_META": {16},
+    "AGENT_CLOSING": {30},
+    "AGENT_CLOSING_META": {13},
+    "AGENT_TAKEAWAY": {15, 16},
+    "AGENT_BODY": {17, 18, 20},
+    "AGENT_FIGURE_CAPTION_": {9},
+    "AGENT_STEP_TEXT_": {18},
+    "AGENT_STEP_ARROW_": {20},
+    "AGENT_COLUMN_HEAD_": {21},
+    "AGENT_SUMMARY_LABEL_": {19},
+    "AGENT_SUMMARY_VALUE_": {18},
+}
 
 
 def visual_width(text: str) -> float:
@@ -50,6 +69,27 @@ def text_overflow(shape) -> str | None:
     if needed_lines > max_lines:
         return f"needs about {needed_lines} lines; slot capacity is {max_lines}"
     return None
+
+
+def text_style_issues(shape) -> list[str]:
+    """Enforce the fixed template's font and same-level size contract."""
+    if not getattr(shape, "has_text_frame", False) or not shape.text.strip():
+        return []
+    expected_sizes = next((sizes for prefix, sizes in EXPECTED_FONT_SIZES.items() if shape.name.startswith(prefix)), None)
+    if expected_sizes is None:
+        return []
+    issues = []
+    for paragraph in shape.text_frame.paragraphs:
+        for run in paragraph.runs:
+            if not run.text:
+                continue
+            if run.font.name != FONT:
+                issues.append(f"{shape.name} uses {run.font.name or 'an inherited font'} instead of {FONT}")
+            size = run.font.size.pt if run.font.size is not None else None
+            if size not in expected_sizes:
+                choices = "/".join(str(value) for value in sorted(expected_sizes))
+                issues.append(f"{shape.name} uses {size or 'an inherited'}pt; expected {choices}pt")
+    return issues
 
 
 def all_shapes(shapes):
@@ -99,6 +139,8 @@ def validate(pptx: Path, plan: dict) -> dict:
             overflow = text_overflow(shape)
             if overflow:
                 issues.append(f"slide {index}: text overflow in {shape.name}: {overflow}")
+            for style_issue in text_style_issues(shape):
+                issues.append(f"slide {index}: style contract violation: {style_issue}")
         for text in texts:
             if re.search(r"\b(?:fig\.?\s*\d+|route\s*[abc]|image2|fallback)\b", text, re.I) and not figures:
                 issues.append(f"slide {index}: unsupported visible internal/figure reference: {text[:80]}")
