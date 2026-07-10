@@ -18,13 +18,14 @@ EMU_PER_CM = 360000
 LINE_HEIGHT = 1.2
 FONT = "Microsoft YaHei"
 EXPECTED_FONT_SIZES = {
-    "AGENT_NAV_LABEL_": {11},
+    "AGENT_NAV_LABEL_": {12},
     "AGENT_FOOTER": {8},
     "AGENT_PAGE_NUMBER": {8},
     "AGENT_TITLE": {24, 30},
-    "AGENT_COVER_TITLE": {34},
+    "AGENT_COVER_ENGLISH_TITLE": {20},
+    "AGENT_COVER_TITLE": {30},
     "AGENT_COVER_META": {16},
-    "AGENT_CLOSING": {30},
+    "AGENT_CLOSING": {54},
     "AGENT_CLOSING_META": {13},
     "AGENT_TAKEAWAY": {15, 16},
     "AGENT_BODY": {17, 18, 20},
@@ -122,13 +123,22 @@ def validate(pptx: Path, plan: dict) -> dict:
         figures = [name for name in names if name.startswith("AGENT_FIGURE_") and "CAPTION" not in name]
         expected_figures = (expected[index - 1].get("figures") or []) if index <= len(expected) else []
         expected_slide_no = (expected[index - 1].get("slide_no") if index <= len(expected) else None)
+        expected_layout = (expected[index - 1].get("layout_type") if index <= len(expected) else None)
+        if not expected_layout and index == 1:
+            expected_layout = "cover"
+        chromeless = expected_layout in ("cover", "closing")
         page_number_shapes = [shape for shape in shapes if shape.name == "AGENT_PAGE_NUMBER"]
-        if len(page_number_shapes) != 1 or not getattr(page_number_shapes[0], "has_text_frame", False):
-            issues.append(f"slide {index}: missing or duplicated page number")
-        elif page_number_shapes[0].text.strip() != str(expected_slide_no):
-            issues.append(f"slide {index}: page number does not match plan")
-        if len([name for name in names if name.startswith("AGENT_NAV_LABEL_")]) != nav_count:
-            issues.append(f"slide {index}: duplicated or incomplete navigation")
+        nav_label_count = len([name for name in names if name.startswith("AGENT_NAV_LABEL_")])
+        if chromeless:
+            if page_number_shapes or nav_label_count:
+                issues.append(f"slide {index}: cover/closing page must not contain navigation or page number")
+        else:
+            if len(page_number_shapes) != 1 or not getattr(page_number_shapes[0], "has_text_frame", False):
+                issues.append(f"slide {index}: missing or duplicated page number")
+            elif page_number_shapes[0].text.strip() != str(expected_slide_no):
+                issues.append(f"slide {index}: page number does not match plan")
+            if nav_label_count != nav_count:
+                issues.append(f"slide {index}: duplicated or incomplete navigation")
         if len(figures) != len(expected_figures):
             issues.append(f"slide {index}: figures deck={len(figures)} plan={len(expected_figures)}")
         unowned = [name for name in names if not name.startswith("AGENT_")]

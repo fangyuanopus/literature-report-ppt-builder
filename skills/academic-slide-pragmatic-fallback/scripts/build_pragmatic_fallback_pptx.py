@@ -18,12 +18,18 @@ from pathlib import Path
 from PIL import Image
 from pptx import Presentation
 from pptx.dml.color import RGBColor
+from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
 
 
 SLIDE_W, SLIDE_H = Inches(13.333), Inches(7.5)
-RED, BLACK, GRAY, LIGHT = RGBColor(160, 15, 30), RGBColor(30, 30, 30), RGBColor(105, 105, 105), RGBColor(247, 247, 247)
+RED = RGBColor(139, 13, 24)
+BLACK = RGBColor(30, 30, 30)
+GRAY = RGBColor(105, 105, 105)
+LIGHT = RGBColor(247, 247, 247)
+BORDER = RGBColor(190, 190, 190)
+WHITE = RGBColor(255, 255, 255)
 FONT = "Microsoft YaHei"
 FORBIDDEN_AUDIENCE_TEXT = ("pragmatic fallback", "editable fallback", "route c", "image2", "模板路径", "构建器")
 PT_PER_CM = 28.3465
@@ -84,6 +90,17 @@ def add_rect(slide, name, x, y, w, h, color):
     return shape
 
 
+def add_panel(slide, name, x, y, w, h, color=WHITE, rounded=False):
+    shape_type = MSO_SHAPE.ROUNDED_RECTANGLE if rounded else MSO_SHAPE.RECTANGLE
+    shape = slide.shapes.add_shape(shape_type, x, y, w, h)
+    set_name(shape, name)
+    shape.fill.solid()
+    shape.fill.fore_color.rgb = color
+    shape.line.color.rgb = BORDER
+    shape.line.width = Pt(0.8)
+    return shape
+
+
 def add_text(slide, name, text, x, y, w, h, size, color=BLACK, bold=False, align=PP_ALIGN.LEFT, wrap=True):
     assert_text_fits(name, str(text), w, h, size, wrap)
     box = slide.shapes.add_textbox(x, y, w, h)
@@ -134,30 +151,27 @@ def validate_copy(item: dict) -> None:
 def add_chrome(slide, navigation: list[str], section: str, slide_no: int, footer: str):
     if section not in navigation:
         raise ValueError(f"slide {slide_no}: section must be one of deck.navigation")
-    add_rect(slide, "AGENT_NAV_BACKGROUND", 0, 0, SLIDE_W, Inches(0.43), LIGHT)
-    slot_w = SLIDE_W / len(navigation)
+    nav_x, nav_y, nav_w, nav_h = Inches(0.16), Inches(0.03), Inches(13.01), Inches(0.38)
+    slot_w = nav_w / len(navigation)
     for index, label in enumerate(navigation):
-        x = slot_w * index
+        x = nav_x + slot_w * index
         active = label == section
-        if active:
-            add_rect(slide, f"AGENT_NAV_ACTIVE_{index}", x, 0, slot_w, Inches(0.43), RED)
-        add_text(slide, f"AGENT_NAV_LABEL_{index}", label, x, Inches(0.035), slot_w, Inches(0.29), 11, RGBColor(255, 255, 255) if active else BLACK, active, PP_ALIGN.CENTER, False)
-    add_rect(slide, "AGENT_NAV_RULE", Inches(0.55), Inches(0.51), Inches(12.2), Inches(0.015), GRAY)
+        add_panel(slide, f"AGENT_NAV_SLOT_{index}", x, nav_y, slot_w, nav_h, RED if active else WHITE)
+        add_text(slide, f"AGENT_NAV_LABEL_{index}", label, x, Inches(0.065), slot_w, Inches(0.25), 12, WHITE if active else BLACK, active, PP_ALIGN.CENTER, False)
     if footer:
-        add_text(slide, "AGENT_FOOTER", footer, Inches(0.8), Inches(7.06), Inches(8.8), Inches(0.16), 8, GRAY, False, PP_ALIGN.LEFT, False)
-    add_text(slide, "AGENT_PAGE_NUMBER", str(slide_no), Inches(12.45), Inches(7.05), Inches(0.3), Inches(0.16), 8, GRAY, False, PP_ALIGN.RIGHT, False)
+        add_text(slide, "AGENT_FOOTER", footer, Inches(0.35), Inches(7.12), Inches(9.4), Inches(0.14), 8, GRAY, False, PP_ALIGN.LEFT, False)
+    add_text(slide, "AGENT_PAGE_NUMBER", str(slide_no), Inches(12.6), Inches(7.11), Inches(0.28), Inches(0.14), 8, GRAY, False, PP_ALIGN.RIGHT, False)
 
 
 def add_title(slide, title: str):
     copy, size, height = title_copy(title)
-    add_text(slide, "AGENT_TITLE", copy, Inches(0.8), Inches(0.63), Inches(11.8), Inches(height), size, BLACK, True, PP_ALIGN.LEFT, True)
-    add_rect(slide, "AGENT_TITLE_RULE", Inches(0.8), Inches(0.63 + height + 0.05), Inches(3.15), Inches(0.018), RED)
+    add_text(slide, "AGENT_TITLE", copy, Inches(0.35), Inches(0.59), Inches(12.35), Inches(height), size, RED, False, PP_ALIGN.LEFT, True)
 
 
 def add_bullets(slide, bullets: list[str], x, y, w, h, size=18):
     if not bullets:
         return
-    text = "\n".join(f"• {line}" for line in bullets)
+    text = "\n".join(f"{index}. {line}" for index, line in enumerate(bullets, start=1))
     add_text(slide, "AGENT_BODY", text, x, y, w, h, size, BLACK, False, PP_ALIGN.LEFT, True)
 
 
@@ -184,17 +198,27 @@ def add_figure(slide, figure: dict, x, y, w, h, slide_no: int, index: int):
 
 
 def layout_cover(slide, item):
-    add_text(slide, "AGENT_COVER_TITLE", item["title"], Inches(1.2), Inches(2.2), Inches(10.9), Inches(1.0), 34, BLACK, True, PP_ALIGN.CENTER, True)
+    english_title = item.get("english_title")
+    if english_title:
+        add_text(slide, "AGENT_COVER_ENGLISH_TITLE", english_title, Inches(0.9), Inches(1.62), Inches(11.55), Inches(0.46), 20, BLACK, False, PP_ALIGN.CENTER, True)
+    add_text(slide, "AGENT_COVER_TITLE", item["title"], Inches(0.9), Inches(2.04), Inches(11.55), Inches(0.72), 30, RED, False, PP_ALIGN.CENTER, True)
+    add_rect(slide, "AGENT_COVER_DIVIDER", Inches(1.0), Inches(2.82), Inches(11.33), Inches(0.018), RED)
     meta = item.get("metadata") or item.get("bullets") or []
     if meta:
-        add_text(slide, "AGENT_COVER_META", "\n".join(str(x) for x in meta[:5]), Inches(2.0), Inches(3.45), Inches(9.3), Inches(1.35), 16, GRAY, False, PP_ALIGN.CENTER, True)
+        if len(meta) >= 2:
+            add_text(slide, "AGENT_COVER_META_LEFT", str(meta[0]), Inches(1.5), Inches(3.55), Inches(4.4), Inches(0.4), 16, BLACK, False, PP_ALIGN.CENTER, True)
+            add_text(slide, "AGENT_COVER_META_RIGHT", str(meta[1]), Inches(7.4), Inches(3.55), Inches(4.4), Inches(0.4), 16, BLACK, False, PP_ALIGN.CENTER, True)
+        else:
+            add_text(slide, "AGENT_COVER_META", str(meta[0]), Inches(2.0), Inches(3.55), Inches(9.3), Inches(0.4), 16, BLACK, False, PP_ALIGN.CENTER, True)
     if item.get("takeaway"):
-        add_text(slide, "AGENT_TAKEAWAY", item["takeaway"], Inches(1.1), Inches(6.1), Inches(11.1), Inches(0.3), 15, RED, True, PP_ALIGN.CENTER, True)
+        add_text(slide, "AGENT_TAKEAWAY", item["takeaway"], Inches(1.1), Inches(5.4), Inches(11.1), Inches(0.32), 15, RED, False, PP_ALIGN.CENTER, True)
+    add_rect(slide, "AGENT_COVER_BOTTOM_BAND", 0, Inches(7.0), SLIDE_W, Inches(0.5), RED)
 
 
 def layout_text(slide, item):
     add_title(slide, item["title"])
-    add_bullets(slide, item.get("bullets") or [], Inches(1.0), Inches(1.65), Inches(11.0), Inches(4.7), 20)
+    add_panel(slide, "AGENT_TEXT_PANEL", Inches(0.75), Inches(1.55), Inches(11.85), Inches(4.85), WHITE, True)
+    add_bullets(slide, item.get("bullets") or [], Inches(1.05), Inches(1.82), Inches(11.25), Inches(4.3), 20)
 
 
 def layout_figure_right(slide, item):
@@ -202,8 +226,10 @@ def layout_figure_right(slide, item):
     figures = item.get("figures") or []
     if len(figures) != 1:
         raise ValueError("figure_right requires exactly one figure")
-    add_bullets(slide, item.get("bullets") or [], Inches(0.95), Inches(1.65), Inches(4.55), Inches(4.55), 18)
-    add_figure(slide, figures[0], Inches(6.0), Inches(1.55), Inches(6.1), Inches(4.75), item["slide_no"], 0)
+    add_panel(slide, "AGENT_TEXT_PANEL", Inches(0.45), Inches(1.45), Inches(4.5), Inches(4.9), LIGHT, True)
+    add_bullets(slide, item.get("bullets") or [], Inches(0.72), Inches(1.72), Inches(3.95), Inches(4.25), 18)
+    add_panel(slide, "AGENT_EVIDENCE_PANEL", Inches(5.15), Inches(1.35), Inches(7.72), Inches(5.08), WHITE, True)
+    add_figure(slide, figures[0], Inches(5.35), Inches(1.55), Inches(7.32), Inches(4.5), item["slide_no"], 0)
 
 
 def layout_figure_wide(slide, item):
@@ -211,8 +237,17 @@ def layout_figure_wide(slide, item):
     figures = item.get("figures") or []
     if len(figures) != 1:
         raise ValueError("figure_wide requires exactly one figure")
-    add_figure(slide, figures[0], Inches(0.95), Inches(1.55), Inches(11.45), Inches(3.9), item["slide_no"], 0)
-    add_bullets(slide, item.get("bullets") or [], Inches(1.0), Inches(5.75), Inches(11.0), Inches(0.72), 17)
+    with Image.open(figures[0]["path"]) as image:
+        ratio = image.width / image.height
+    if ratio < 1.75:
+        add_panel(slide, "AGENT_EVIDENCE_PANEL", Inches(0.42), Inches(1.35), Inches(7.72), Inches(5.08), WHITE, True)
+        add_figure(slide, figures[0], Inches(0.62), Inches(1.55), Inches(7.32), Inches(4.5), item["slide_no"], 0)
+        add_panel(slide, "AGENT_TEXT_PANEL", Inches(8.38), Inches(1.45), Inches(4.5), Inches(4.9), LIGHT, True)
+        add_bullets(slide, item.get("bullets") or [], Inches(8.65), Inches(1.72), Inches(3.95), Inches(4.25), 18)
+    else:
+        add_panel(slide, "AGENT_EVIDENCE_PANEL", Inches(0.42), Inches(1.35), Inches(12.46), Inches(4.42), WHITE, True)
+        add_figure(slide, figures[0], Inches(0.62), Inches(1.52), Inches(12.06), Inches(3.88), item["slide_no"], 0)
+        add_bullets(slide, item.get("bullets") or [], Inches(0.75), Inches(5.86), Inches(11.8), Inches(0.58), 17)
 
 
 def layout_process(slide, item):
@@ -255,9 +290,10 @@ def layout_summary(slide, item):
 
 
 def layout_closing(slide, item):
-    add_text(slide, "AGENT_CLOSING", item.get("closing_text", "感谢聆听 · 欢迎提问"), Inches(1.2), Inches(2.8), Inches(10.9), Inches(0.75), 30, BLACK, True, PP_ALIGN.CENTER, True)
+    add_text(slide, "AGENT_CLOSING", item.get("closing_text", "汇报完毕，敬请批评指正！"), Inches(0.95), Inches(2.95), Inches(11.43), Inches(0.92), 54, BLACK, False, PP_ALIGN.CENTER, True)
     if item.get("metadata"):
-        add_text(slide, "AGENT_CLOSING_META", "\n".join(item["metadata"][:3]), Inches(2.0), Inches(4.1), Inches(9.3), Inches(0.8), 13, GRAY, False, PP_ALIGN.CENTER, True)
+        add_text(slide, "AGENT_CLOSING_META", "\n".join(item["metadata"][:3]), Inches(2.0), Inches(4.35), Inches(9.3), Inches(0.55), 13, GRAY, False, PP_ALIGN.CENTER, True)
+    add_rect(slide, "AGENT_CLOSING_BOTTOM_BAND", 0, Inches(7.0), SLIDE_W, Inches(0.5), RED)
 
 
 def infer_layout(item: dict) -> str:
@@ -318,7 +354,8 @@ def build(plan: dict, output: Path) -> dict:
         if layout not in LAYOUTS:
             raise ValueError(f"slide {item['slide_no']}: unsupported layout_type {layout}")
         slide = prs.slides.add_slide(prs.slide_layouts[6])
-        add_chrome(slide, navigation, item.get("section") or navigation[0], item["slide_no"], footer)
+        if layout not in ("cover", "closing"):
+            add_chrome(slide, navigation, item.get("section") or navigation[0], item["slide_no"], footer)
         LAYOUTS[layout](slide, item)
         if item.get("takeaway") and layout not in ("cover", "closing"):
             add_text(slide, "AGENT_TAKEAWAY", item["takeaway"], Inches(0.95), Inches(6.55), Inches(11.15), Inches(0.3), 16, RED, True, PP_ALIGN.LEFT, True)
