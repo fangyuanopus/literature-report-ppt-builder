@@ -75,7 +75,8 @@ def text_style_issues(shape) -> list[str]:
     """Enforce the fixed template's font and same-level size contract."""
     if not getattr(shape, "has_text_frame", False) or not shape.text.strip():
         return []
-    expected_sizes = next((sizes for prefix, sizes in EXPECTED_FONT_SIZES.items() if shape.name.startswith(prefix)), None)
+    matches = [(prefix, sizes) for prefix, sizes in EXPECTED_FONT_SIZES.items() if shape.name.startswith(prefix)]
+    expected_sizes = max(matches, key=lambda item: len(item[0]))[1] if matches else None
     if expected_sizes is None:
         return []
     issues = []

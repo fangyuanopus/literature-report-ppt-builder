@@ -304,6 +304,9 @@ def build(plan: dict, output: Path) -> dict:
     prs = Presentation()
     prs.slide_width, prs.slide_height = SLIDE_W, SLIDE_H
     footer = deck.get("footer", "")
+    lowered_footer = str(footer).lower()
+    if any(term in lowered_footer for term in FORBIDDEN_AUDIENCE_TEXT):
+        raise ValueError("deck.footer must be bibliographic and cannot expose internal production terms")
     used_layouts = []
     for item in slides:
         item = dict(item)
