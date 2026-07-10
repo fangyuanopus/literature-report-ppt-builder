@@ -1,0 +1,12 @@
+interface:
+  display_name: Academic Slide Minimalist
+  short_description: Creates academic PPTs from real paper/SI figures with gated Image2-only full-slide production.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
