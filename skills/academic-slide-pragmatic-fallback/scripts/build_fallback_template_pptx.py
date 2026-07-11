@@ -14,21 +14,30 @@ slide.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
+from copy import deepcopy
 import json
 import math
+import os
+import re
 import sys
+import zipfile
 from pathlib import Path
 from typing import Any
 
 from PIL import Image
+from lxml import etree
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
+from pptx.opc.constants import RELATIONSHIP_TYPE as RT
+from pptx.oxml.ns import qn
 
 from prepare_fallback_figure import trim_background
 
 
-DEFAULT_TEMPLATE = Path("academic-slide-minimalist/assets/sample-literature-report.pptx")
-DEFAULT_MANIFEST = Path("academic-slide-minimalist/references/sample-template-slot-manifest.json")
+SKILL_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_TEMPLATE = SKILL_ROOT / "assets" / "sample-literature-report.pptx"
+DEFAULT_MANIFEST = SKILL_ROOT / "references" / "sample-template-slot-manifest.json"
 
 
 def visual_width(text: str) -> float:
@@ -123,13 +132,140 @@ def normalize_plan(plan: dict[str, Any]) -> list[dict[str, Any]]:
         source_slide = int(item["source_slide"])
         output_slide = int(item.get("output_slide", index))
         normalized.append({**item, "source_slide": source_slide, "output_slide": output_slide})
-    return normalized
+    output_numbers = [item["output_slide"] for item in normalized]
+    if len(set(output_numbers)) != len(output_numbers):
+        raise ValueError(f"output_slide values must be unique: {output_numbers}")
+    expected_numbers = list(range(1, len(normalized) + 1))
+    if sorted(output_numbers) != expected_numbers:
+        raise ValueError(f"output_slide values must be contiguous 1..{len(normalized)}: {output_numbers}")
+    return sorted(normalized, key=lambda item: item["output_slide"])
 
 
-def replace_text(shape, address: dict[str, Any], new_text: str, expected_text: str | None, strict: bool) -> dict[str, Any]:
+def comparable_text(text: str | None) -> str | None:
+    return text.rstrip() if text is not None else None
+
+
+def rebuild_paragraph_runs(paragraph, run_specs: list[dict[str, Any]] | str) -> None:
+    if isinstance(run_specs, str):
+        run_specs = [{"text": run_specs, "style": "base"}]
+    source_runs = list(paragraph.runs)
+    source_run_elements = [deepcopy(run._r) for run in source_runs]
+
+    base_index = 0
+    emphasis_index = None
+    for index, run in enumerate(source_runs):
+        color = run.font.color
+        try:
+            rgb = str(color.rgb) if color.type else None
+        except (AttributeError, ValueError):
+            rgb = None
+        if rgb and rgb.upper() in {"8B0D18", "A20F18", "A30D18"}:
+            emphasis_index = index
+            break
+
+    paragraph_element = paragraph._p
+    for child in list(paragraph_element):
+        if etree.QName(child).localname in {"r", "br", "fld"}:
+            paragraph_element.remove(child)
+
+    for run_spec in run_specs:
+        text = str(run_spec.get("text", ""))
+        style_from_run = run_spec.get("style_from_run")
+        if style_from_run is None:
+            style_name = run_spec.get("style", "base")
+            if style_name == "emphasis":
+                if emphasis_index is None:
+                    raise ValueError("paragraph has no inherited emphasis run to reuse")
+                style_from_run = emphasis_index
+            elif style_name == "base":
+                style_from_run = base_index
+            else:
+                raise ValueError(f"unsupported inherited run style: {style_name}")
+        style_from_run = int(style_from_run)
+        if source_run_elements:
+            if style_from_run < 0 or style_from_run >= len(source_run_elements):
+                raise ValueError(
+                    f"style_from_run {style_from_run} out of range for paragraph with {len(source_run_elements)} runs"
+                )
+            run_element = deepcopy(source_run_elements[style_from_run])
+            run_element.text = text
+            end_properties = next(
+                (
+                    child
+                    for child in paragraph_element
+                    if etree.QName(child).localname == "endParaRPr"
+                ),
+                None,
+            )
+            if end_properties is None:
+                paragraph_element.append(run_element)
+            else:
+                paragraph_element.insert(paragraph_element.index(end_properties), run_element)
+        else:
+            paragraph.add_run().text = text
+
+
+def replace_whole_text_box(shape, new_text: str | None, new_paragraphs: list[Any] | None) -> dict[str, Any]:
+    paragraphs = shape.text_frame.paragraphs
+    if new_paragraphs is None:
+        paragraph_specs: list[Any] = str(new_text or "").split("\n")
+    else:
+        paragraph_specs = list(new_paragraphs)
+    if len(paragraph_specs) > len(paragraphs):
+        raise ValueError(
+            f"new content requires {len(paragraph_specs)} paragraphs but inherited text box has {len(paragraphs)}"
+        )
+    for index, paragraph in enumerate(paragraphs):
+        if index >= len(paragraph_specs):
+            rebuild_paragraph_runs(paragraph, "")
+            continue
+        spec = paragraph_specs[index]
+        if isinstance(spec, str):
+            rebuild_paragraph_runs(paragraph, spec)
+        elif isinstance(spec, dict):
+            runs = spec.get("runs")
+            if not isinstance(runs, list) or not runs:
+                raise ValueError("new_paragraphs entries must be strings or objects with a non-empty runs list")
+            rebuild_paragraph_runs(paragraph, runs)
+        else:
+            raise ValueError("new_paragraphs entries must be strings or objects")
+    return {
+        "after": "\n".join(paragraph.text for paragraph in paragraphs).rstrip("\n"),
+        "mode": "whole-text-box-paragraph-aware",
+        "paragraph_count": len(paragraph_specs),
+    }
+
+
+def paragraph_specs_text(new_paragraphs: list[Any]) -> str:
+    lines = []
+    for spec in new_paragraphs:
+        if isinstance(spec, str):
+            lines.append(spec)
+        elif isinstance(spec, dict):
+            lines.append("".join(str(run.get("text", "")) for run in spec.get("runs", [])))
+        else:
+            lines.append(str(spec))
+    return "\n".join(lines)
+
+
+def replace_text(
+    shape,
+    address: dict[str, Any],
+    new_text: str | None,
+    expected_text: str | None,
+    strict: bool,
+    new_paragraphs: list[Any] | None = None,
+) -> dict[str, Any]:
     if not getattr(shape, "has_text_frame", False):
         raise ValueError(f"shape_id {shape.shape_id} has no text frame")
     paragraphs = shape.text_frame.paragraphs
+    whole_text_box = "paragraph" not in address and "run" not in address
+    if whole_text_box:
+        before = shape.text_frame.text
+        if expected_text is not None and strict and comparable_text(before) != comparable_text(expected_text):
+            raise ValueError(f"expected text mismatch: have {before!r}, expected {expected_text!r}")
+        result = replace_whole_text_box(shape, new_text, new_paragraphs)
+        return {"before": before, **result}
     paragraph_index = int(address.get("paragraph", 0))
     if paragraph_index >= len(paragraphs):
         raise ValueError(f"paragraph {paragraph_index} out of range for shape_id {shape.shape_id}")
@@ -137,17 +273,17 @@ def replace_text(shape, address: dict[str, Any], new_text: str, expected_text: s
     runs = list(paragraph.runs)
     if not runs:
         before = paragraph.text
-        if expected_text is not None and strict and before != expected_text:
+        if expected_text is not None and strict and comparable_text(before) != comparable_text(expected_text):
             raise ValueError(f"expected text mismatch: have {before!r}, expected {expected_text!r}")
-        paragraph.text = new_text
+        paragraph.text = str(new_text or "")
         return {"before": before, "after": new_text, "mode": "paragraph-text"}
 
     run_index = address.get("run")
     if run_index is None:
         before = "".join(run.text for run in runs)
-        if expected_text is not None and strict and before != expected_text:
+        if expected_text is not None and strict and comparable_text(before) != comparable_text(expected_text):
             raise ValueError(f"expected text mismatch: have {before!r}, expected {expected_text!r}")
-        runs[0].text = new_text
+        runs[0].text = str(new_text or "")
         for run in runs[1:]:
             run.text = ""
         for extra_paragraph in paragraphs[paragraph_index + 1 :]:
@@ -159,10 +295,10 @@ def replace_text(shape, address: dict[str, Any], new_text: str, expected_text: s
     if run_index >= len(runs):
         raise ValueError(f"run {run_index} out of range for shape_id {shape.shape_id}")
     before = runs[run_index].text
-    if expected_text is not None and strict and before != expected_text:
+    if expected_text is not None and strict and comparable_text(before) != comparable_text(expected_text):
         raise ValueError(f"expected text mismatch: have {before!r}, expected {expected_text!r}")
-    runs[run_index].text = new_text
-    return {"before": before, "after": new_text, "mode": "run"}
+    runs[run_index].text = str(new_text or "")
+    return {"before": before, "after": str(new_text or ""), "mode": "run"}
 
 
 def contain_geometry(image_path: Path, left: int, top: int, width: int, height: int) -> tuple[int, int, int, int]:
@@ -246,6 +382,255 @@ def delete_shape(shape) -> None:
     shape._element.getparent().remove(shape._element)
 
 
+def clean_slide_relationships(slide) -> list[dict[str, Any]]:
+    """Remove prior-template payload no longer referenced by slide XML.
+
+    Removing a picture shape does not make python-pptx drop its image
+    relationship. Likewise, inherited notes remain reachable even though they
+    are not represented by a shape. Both cases can preserve source-paper data
+    inside an otherwise clean-looking output package.
+    """
+    referenced_r_ids = {
+        value
+        for element in slide._element.iter()
+        for value in element.attrib.values()
+        if isinstance(value, str) and value.startswith("rId")
+    }
+    removed: list[dict[str, Any]] = []
+    for rel in list(slide.part.rels.values()):
+        if rel.reltype == RT.SLIDE_LAYOUT:
+            continue
+        remove_reason = None
+        if rel.reltype == RT.NOTES_SLIDE:
+            remove_reason = "inherited-notes"
+        elif rel.rId not in referenced_r_ids:
+            remove_reason = "unreferenced"
+        if remove_reason is None:
+            continue
+        removed.append(
+            {
+                "slide_part": str(slide.part.partname),
+                "relationship_id": rel.rId,
+                "relationship_type": rel.reltype,
+                "target_part": str(getattr(getattr(rel, "target_part", None), "partname", "")),
+                "reason": remove_reason,
+            }
+        )
+        slide.part.drop_rel(rel.rId)
+    return removed
+
+
+def remove_relationship_list(parent_part, list_element) -> list[dict[str, str]]:
+    removed: list[dict[str, str]] = []
+    for item in list(list_element):
+        relationship_id = item.get(qn("r:id"))
+        if not relationship_id:
+            continue
+        rel = parent_part.rels[relationship_id]
+        removed.append(
+            {
+                "relationship_id": relationship_id,
+                "relationship_type": rel.reltype,
+                "target_part": str(getattr(getattr(rel, "target_part", None), "partname", "")),
+            }
+        )
+        parent_part.drop_rel(relationship_id)
+        list_element.remove(item)
+    return removed
+
+
+def clean_presentation_structure(prs) -> dict[str, Any]:
+    """Keep only masters/layouts used by visible slides and remove stale UI state."""
+    used_layout_parts = {slide.slide_layout.part for slide in prs.slides}
+    used_master_parts = {slide.slide_layout.slide_master.part for slide in prs.slides}
+    report: dict[str, Any] = {
+        "removed_slide_masters": [],
+        "removed_slide_layouts": [],
+        "removed_notes_masters": [],
+        "removed_sections": 0,
+    }
+
+    for master in list(prs.slide_masters):
+        if master.part not in used_master_parts:
+            continue
+        for child in list(master.part._element):
+            if etree.QName(child).localname != "sldLayoutIdLst":
+                continue
+            for item in list(child):
+                relationship_id = item.get(qn("r:id"))
+                if not relationship_id:
+                    continue
+                rel = master.part.rels[relationship_id]
+                if rel.target_part in used_layout_parts:
+                    continue
+                report["removed_slide_layouts"].append(str(rel.target_part.partname))
+                master.part.drop_rel(relationship_id)
+                child.remove(item)
+
+    presentation_element = prs.part._element
+    for child in list(presentation_element):
+        local_name = etree.QName(child).localname
+        if local_name == "sldMasterIdLst":
+            for item in list(child):
+                relationship_id = item.get(qn("r:id"))
+                if not relationship_id:
+                    continue
+                rel = prs.part.rels[relationship_id]
+                if rel.target_part in used_master_parts:
+                    continue
+                report["removed_slide_masters"].append(str(rel.target_part.partname))
+                prs.part.drop_rel(relationship_id)
+                child.remove(item)
+        elif local_name == "notesMasterIdLst":
+            report["removed_notes_masters"].extend(remove_relationship_list(prs.part, child))
+            presentation_element.remove(child)
+
+    for section_list in list(presentation_element.xpath(".//*[local-name()='sectionLst']")):
+        parent = section_list.getparent()
+        parent.remove(section_list)
+        report["removed_sections"] += 1
+    for extension in list(presentation_element.xpath(".//*[local-name()='ext']")):
+        if len(extension) == 0 and not (extension.text or "").strip():
+            extension.getparent().remove(extension)
+    for extension_list in list(presentation_element.xpath(".//*[local-name()='extLst']")):
+        if len(extension_list) == 0:
+            extension_list.getparent().remove(extension_list)
+    return report
+
+
+def derive_document_title(plan: dict[str, Any], slide_map: list[dict[str, Any]], manifest: dict[str, Any]) -> str:
+    slots_by_id = manifest["_slots_by_id"]
+    for item in slide_map:
+        if item.get("role") != "cover":
+            continue
+        source_slide = int(item["source_slide"])
+        for edit in item.get("edits", []):
+            slot = slots_by_id.get((source_slide, edit.get("slot_id")))
+            if slot and slot.get("role") == "cover title" and edit.get("new_text"):
+                return str(edit["new_text"])
+    for item in slide_map:
+        for edit in item.get("edits", []):
+            if edit.get("new_text"):
+                return str(edit["new_text"])
+    return "Academic literature report"
+
+
+def sanitize_core_properties(prs, plan: dict[str, Any], slide_map: list[dict[str, Any]], manifest: dict[str, Any]) -> dict[str, Any]:
+    requested = dict(plan.get("document_properties") or {})
+    title = str(requested.get("title") or derive_document_title(plan, slide_map, manifest))
+    subject = str(requested.get("subject") or "学术文献汇报")
+    author = str(requested.get("creator") or "")
+    last_modified_by = str(requested.get("last_modified_by") or "")
+    core = prs.core_properties
+    core.title = title
+    core.subject = subject
+    core.author = author
+    core.last_modified_by = last_modified_by
+    core.keywords = str(requested.get("keywords") or "")
+    core.comments = str(requested.get("comments") or "")
+    core.category = str(requested.get("category") or "")
+    core.language = str(requested.get("language") or "")
+    core.content_status = ""
+    core.identifier = ""
+    core.version = ""
+    core.revision = 1
+    return {
+        "title": title,
+        "subject": subject,
+        "creator": author,
+        "last_modified_by": last_modified_by,
+        "company": str(requested.get("company") or ""),
+    }
+
+
+def presentation_text_stats(prs) -> tuple[int, int]:
+    paragraph_count = 0
+    word_count = 0
+    for slide in prs.slides:
+        for shape in iter_shapes(slide.shapes):
+            if not getattr(shape, "has_text_frame", False):
+                continue
+            paragraph_count += len(shape.text_frame.paragraphs)
+            text = shape.text_frame.text
+            word_count += len(re.findall(r"[A-Za-z0-9]+|[\u3400-\u9fff]", text))
+    return paragraph_count, word_count
+
+
+def sanitize_package_properties(
+    pptx: Path,
+    *,
+    slide_count: int,
+    paragraph_count: int,
+    word_count: int,
+    company: str,
+) -> None:
+    """Rewrite stale extended/custom properties after python-pptx saves."""
+    app_namespace = "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"
+    with zipfile.ZipFile(pptx, "r") as source:
+        entries = [(item, source.read(item.filename)) for item in source.infolist()]
+
+    rewritten: list[tuple[zipfile.ZipInfo, bytes]] = []
+    for item, payload in entries:
+        name = item.filename
+        if name == "docProps/custom.xml":
+            continue
+        if name == "docProps/core.xml":
+            root = etree.fromstring(payload)
+            removable_core_fields = {
+                "created",
+                "modified",
+                "lastPrinted",
+            }
+            for element in list(root):
+                if etree.QName(element).localname in removable_core_fields:
+                    root.remove(element)
+            payload = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
+        elif name == "docProps/app.xml":
+            root = etree.fromstring(payload)
+            values = {
+                "TotalTime": 0,
+                "Words": word_count,
+                "Paragraphs": paragraph_count,
+                "Slides": slide_count,
+                "Notes": 0,
+                "HiddenSlides": 0,
+            }
+            for local_name, value in values.items():
+                elements = root.findall(f"{{{app_namespace}}}{local_name}")
+                if elements:
+                    elements[0].text = str(value)
+            for local_name in ("HeadingPairs", "TitlesOfParts", "Manager"):
+                for element in root.findall(f"{{{app_namespace}}}{local_name}"):
+                    root.remove(element)
+            company_elements = root.findall(f"{{{app_namespace}}}Company")
+            if company_elements:
+                company_elements[0].text = company
+            payload = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
+        elif name == "_rels/.rels":
+            root = etree.fromstring(payload)
+            for relationship in list(root):
+                if relationship.get("Type", "").endswith("/custom-properties"):
+                    root.remove(relationship)
+            payload = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
+        elif name == "[Content_Types].xml":
+            root = etree.fromstring(payload)
+            for override in list(root):
+                if override.get("PartName") == "/docProps/custom.xml":
+                    root.remove(override)
+            payload = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
+        rewritten.append((item, payload))
+
+    temp_path = pptx.with_suffix(pptx.suffix + ".tmp")
+    with zipfile.ZipFile(temp_path, "w") as target:
+        for item, payload in rewritten:
+            target.writestr(item, payload)
+    os.replace(temp_path, pptx)
+    with zipfile.ZipFile(pptx, "r") as archive:
+        duplicates = [name for name, count in Counter(archive.namelist()).items() if count > 1]
+    if duplicates:
+        raise ValueError(f"metadata rewrite produced duplicate package parts: {duplicates}")
+
+
 def prune_slides(prs, selected: list[int]) -> None:
     slide_id_list = prs.slides._sldIdLst
     slide_ids = list(slide_id_list)
@@ -255,6 +640,15 @@ def prune_slides(prs, selected: list[int]) -> None:
         if slide_index < 0 or slide_index >= total:
             raise ValueError(f"selected slide {slide_index + 1} out of range 1..{total}")
     new_order = [slide_ids[index] for index in zero_based]
+    retained_relationship_ids = {slide_id.rId for slide_id in new_order}
+    for slide_id in slide_ids:
+        if slide_id.rId not in retained_relationship_ids:
+            # Removing only the <p:sldId> leaves the old slide relationship in
+            # presentation.xml.rels. The slide then remains embedded in the
+            # package even though PowerPoint does not show it. Drop the
+            # relationship as well so prior-paper slides and their media are
+            # unreachable and omitted when python-pptx saves the package.
+            prs.part.drop_rel(slide_id.rId)
     for slide_id in list(slide_id_list):
         slide_id_list.remove(slide_id)
     for slide_id in new_order:
@@ -291,6 +685,9 @@ def apply_plan(args) -> dict[str, Any]:
         "image_frame_warnings": [],
         "untouched_replaceable_slots": [],
         "prepared_figures": [],
+        "removed_inherited_relationships": [],
+        "presentation_cleanup": {},
+        "document_properties": {},
         "limitations": [],
     }
 
@@ -322,16 +719,29 @@ def apply_plan(args) -> dict[str, Any]:
                 report["delete_edits"].append({"source_slide": source_slide, "slot_id": slot_id, "shape_id": shape_id})
                 continue
 
-            if "new_text" in edit:
+            if "new_text" in edit or "new_paragraphs" in edit:
                 expected = edit.get("expected_text")
                 if expected is None and slot:
                     expected = slot.get("current_text")
-                result = replace_text(shape, address, str(edit["new_text"]), expected, args.strict)
+                new_paragraphs = edit.get("new_paragraphs")
+                display_text = (
+                    str(edit.get("new_text", ""))
+                    if new_paragraphs is None
+                    else paragraph_specs_text(new_paragraphs)
+                )
+                result = replace_text(
+                    shape,
+                    address,
+                    edit.get("new_text"),
+                    expected,
+                    args.strict,
+                    new_paragraphs,
+                )
                 if slot_id:
                     touched_slots.add((source_slide, slot_id))
                     touched_shape_paths.setdefault(source_slide, []).append(shape_path_for_slot(slot))
                 capacity = (slot or {}).get("capacity")
-                fits, message = check_overflow(str(edit["new_text"]), capacity)
+                fits, message = check_overflow(display_text, capacity)
                 entry = {
                     "source_slide": source_slide,
                     "slot_id": slot_id,
@@ -341,7 +751,7 @@ def apply_plan(args) -> dict[str, Any]:
                 report["text_edits"].append(entry)
                 if message and not fits:
                     report["overflow_warnings"].append({**entry, "warning": message})
-                if has_truncation_ellipsis(str(edit["new_text"])):
+                if has_truncation_ellipsis(display_text):
                     report["ellipsis_warnings"].append(entry)
                 continue
 
@@ -350,11 +760,18 @@ def apply_plan(args) -> dict[str, Any]:
                 if not source_image.is_absolute():
                     source_image = args.plan.parent / source_image
                 prepared_image, prepared_entry = prepare_image(source_image, args.prepared_dir)
+                fit_strategy = str(edit.get("fit_strategy", "contain"))
+                if fit_strategy not in {"contain", "adaptive_contain"}:
+                    raise ValueError(f"unsupported fit_strategy {fit_strategy!r} for slot {slot_id}")
                 target_frame = None
                 if edit.get("frame_scope") == "all_image_slots":
                     target_frame = union_frame(pages_by_slide[source_slide].get("image_slots", []))
                 elif edit.get("target_frame"):
                     target_frame = {key: int(value) for key, value in edit["target_frame"].items()}
+                if fit_strategy == "adaptive_contain" and target_frame is None:
+                    raise ValueError("adaptive_contain requires frame_scope=all_image_slots or target_frame")
+                if fit_strategy == "contain" and target_frame is not None:
+                    raise ValueError("contain must use the inherited slot frame; use adaptive_contain for a larger frame")
                 picture_result = replace_picture_contain(slide, shape, prepared_image, target_frame)
                 if slot_id:
                     touched_slots.add((source_slide, slot_id))
@@ -369,7 +786,7 @@ def apply_plan(args) -> dict[str, Any]:
                         "source_image": str(source_image),
                         "prepared_image": str(prepared_image),
                         "figure_profile": edit.get("figure_profile"),
-                        "fit_strategy": edit.get("fit_strategy", "contain"),
+                        "fit_strategy": fit_strategy,
                         "frame_scope": edit.get("frame_scope", "slot"),
                         "result": picture_result,
                     }
@@ -400,9 +817,22 @@ def apply_plan(args) -> dict[str, Any]:
                     continue
                 report["untouched_replaceable_slots"].append({"source_slide": source_slide, "slot_id": slot_id})
 
+    for source_slide in selected_sources:
+        report["removed_inherited_relationships"].extend(clean_slide_relationships(prs.slides[source_slide - 1]))
+
     prune_slides(prs, selected_sources)
+    report["presentation_cleanup"] = clean_presentation_structure(prs)
+    report["document_properties"] = sanitize_core_properties(prs, plan, slide_map, manifest)
+    paragraph_count, word_count = presentation_text_stats(prs)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     prs.save(args.output)
+    sanitize_package_properties(
+        args.output,
+        slide_count=len(prs.slides),
+        paragraph_count=paragraph_count,
+        word_count=word_count,
+        company=report["document_properties"]["company"],
+    )
 
     prepared_manifest = {
         "$schema": "academic-fallback-prepared-figures/v1",

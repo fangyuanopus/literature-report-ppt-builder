@@ -23,11 +23,19 @@ Use only when a full-slide Image2 backend is confirmed and can faithfully preser
 
 Use only after explicit user consent and a passed hygiene audit. The template owns its navigation, footer, and mapped slots; code edits inherited objects in place and must not add a second navigation layer.
 
+When the user explicitly asks to reproduce the bundled sample template exactly, use Route B's exact-template mode. Preserve the sample's navigation labels and decorative chrome intentionally, map each output page to a distinct source-slide archetype, and replace or remove every source-specific scientific object. Do not describe a code-redrawn Route C deck as an exact reproduction. Read `references/exact-template-fidelity.md` before building.
+
+```text
+python scripts/build_fallback_template_pptx.py edit_plan.json exact.pptx --strict --fail-on-warnings
+python scripts/audit_fallback_template_pptx.py exact.pptx --build-report exact.build-report.json --check-masters --exact-template --fail-on-review
+python scripts/audit_exact_template_fidelity.py exact.pptx --plan edit_plan.json --build-report exact.build-report.json --fail-on-review
+```
+
 ```text
 python scripts/audit_fallback_template_pptx.py template.pptx --check-masters --fail-on-review
 ```
 
-Reject templates containing old scientific content, legacy navigation, figure labels, sample names, or non-removable master/layout objects. Read `references/template-hygiene.md` and `references/fallback-template-pptx.md`.
+Reject templates containing old scientific content, figure labels, sample names, or non-removable master/layout objects. For adaptive cross-domain reuse, also reject fixed legacy navigation. The only exception is exact-template mode, where the user has explicitly requested that navigation and it remains semantically appropriate. Read `references/template-hygiene.md` and `references/fallback-template-pptx.md`.
 
 ### Route C: pragmatic fallback
 
@@ -58,6 +66,8 @@ Every displayed scientific figure requires `source_type: figure_crop`, `crop_ver
 3. Choose Route A, B, or C and prepare page briefs with source crops and page types.
 4. Build only through that route; do not silently substitute a different route.
 5. Run structural QA, render every slide with PowerPoint/LibreOffice where available, inspect individual pages and a montage, and fix all overflow, overlap, legacy residue, unreadable figures, and inconsistent chrome.
+
+For exact-template mode, also compare the montage with the source-template montage. Passing structural QA alone is insufficient: the inherited navigation, title treatment, margins, footer band, image framing, and whitespace rhythm must remain visibly unchanged.
 
 ## Route C delivery statement
 

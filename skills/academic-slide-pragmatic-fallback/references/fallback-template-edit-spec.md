@@ -59,12 +59,15 @@ python3 scripts/draft_fallback_edit_plan.py \
 python3 scripts/build_fallback_template_pptx.py \
   fallback_edit_plan.json \
   fallback_presentation.pptx \
-  --report fallback_build_report.json
+  --report fallback_build_report.json \
+  --strict \
+  --fail-on-warnings
 
 python3 scripts/audit_fallback_template_pptx.py \
   fallback_presentation.pptx \
   --build-report fallback_build_report.json \
-  --out fallback_structural_audit.json
+  --out fallback_structural_audit.json \
+  --fail-on-review
 
 python3 scripts/render_pptx_quicklook_contact_sheet.py \
   fallback_presentation.pptx \
@@ -75,6 +78,8 @@ python3 scripts/render_pptx_quicklook_contact_sheet.py \
 The draft script chooses role-compatible source slides and maps structured slide briefs onto inherited title, body, caption, and image slots. For figure slides, it also considers real image aspect ratios and reports predicted image occupancy so margin-heavy or badly matched frames can be avoided before building. It must avoid source pages whose sample scientific visuals are too strong to neutralize cleanly, unless the plan explicitly documents why no cleaner result/application page is available. Review `fallback_plan_report.json` before building, especially when it reports extra image slots, low predicted occupancy, many deletion edits, or a surprising source slide.
 
 The builder is intentionally limited. It edits inherited slots from the manifest, prepares real source figures, prunes/reorders selected template slides, and writes a report. It should not be bypassed with a freeform code layout when a requested slide can be expressed as source-slide selection plus slot edits.
+
+For exact-template output, add `--check-masters --exact-template` to the structural audit and run `audit_exact_template_fidelity.py` with the edit plan and build report. The exact audit verifies that the used master/layout shape trees, preserved chrome, text-box geometry, structured paragraph runs, and inherited image bounds did not drift.
 
 If the build report says `status: "needs_review"`, do not deliver the fallback as finished. Shorten text, choose a better source slide, split the slide, tighten the real crop, or explicitly delete/replace remaining template objects, then rebuild.
 
@@ -158,6 +163,13 @@ Create `fallback_edit_plan.json` before editing the PPTX:
 ```json
 {
   "$schema": "academic-fallback-edit-plan/v1",
+  "document_properties": {
+    "title": "Attention Is All You Need",
+    "subject": "学术文献汇报",
+    "creator": "",
+    "last_modified_by": "",
+    "company": ""
+  },
   "selected_slides": [1, 3, 6, 10, 20],
   "slide_map": [
     {
@@ -185,6 +197,25 @@ Rules:
 - every editable slot in the selected source slide must be kept, replaced, or deleted intentionally;
 - `preserve-only` is allowed only for true separator/ending/chrome slides with no changed scientific content;
 - long text must be rewritten shorter, moved to notes, split across slides, or mapped to a roomier source slide. Do not solve fit by changing only one slot's font size.
+
+For a multi-point inherited body box, use structured paragraphs instead of embedding every line in one text run:
+
+```json
+{
+  "slot_id": "s16_text_7",
+  "new_paragraphs": [
+    {
+      "runs": [
+        {"text": "1. 基础证据，", "style": "base"},
+        {"text": "关键结论。", "style": "emphasis"}
+      ]
+    },
+    "2. 第二条完整结论。"
+  ]
+}
+```
+
+`base` and `emphasis` reuse the matching inherited run formatting. Do not set a new color or font directly. The new paragraph count must not exceed the inherited paragraph count.
 
 ## Text Replacement Rules
 

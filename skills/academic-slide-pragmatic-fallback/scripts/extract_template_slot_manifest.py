@@ -380,9 +380,10 @@ def assign_type_scale(manifest: dict) -> None:
 
 
 def main() -> int:
+    skill_root = Path(__file__).resolve().parent.parent
     parser = argparse.ArgumentParser()
-    parser.add_argument("--template", type=Path, default=Path("academic-slide-minimalist/assets/sample-literature-report.pptx"))
-    parser.add_argument("--out", type=Path, default=Path("academic-slide-minimalist/references/sample-template-slot-manifest.json"))
+    parser.add_argument("--template", type=Path, default=skill_root / "assets" / "sample-literature-report.pptx")
+    parser.add_argument("--out", type=Path, default=skill_root / "references" / "sample-template-slot-manifest.json")
     args = parser.parse_args()
 
     manifest = extract(args.template)
