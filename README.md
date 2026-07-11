@@ -1,336 +1,162 @@
-# academic-slide-minimalist
+# Literature Report PPT Builder
 
-把论文和补充信息读透，再生成一套能讲清楚证据链的中文文献汇报 PPT。
+把论文主线、真实图源和可讲的结论组织成中文文献汇报 PPT。项目的当前入口是 [academic-slide-pragmatic-fallback](skills/academic-slide-pragmatic-fallback/SKILL.md)。
 
 [English](docs/README.en.md) | 中文
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Codex Skill](https://img.shields.io/badge/Codex-Skill-blue)](academic-slide-minimalist/SKILL.md)
-[![PPTX](https://img.shields.io/badge/output-PPTX-orange)](academic-slide-minimalist/assets/sample-literature-report.pptx)
-[![Language](https://img.shields.io/badge/deck_language-%E4%B8%AD%E6%96%87-red)](README.md)
+[![Codex Skill](https://img.shields.io/badge/Codex-Skill-blue)](skills/academic-slide-pragmatic-fallback/SKILL.md)
+[![Template](https://img.shields.io/badge/template-editable_PPTX-orange)](skills/academic-slide-pragmatic-fallback/assets/sample-literature-report.pptx)
 
-`academic-slide-minimalist` 是一个面向 Claude Code / Codex 的学术 PPT skill。它适合论文组会、journal club、课程文献汇报、硕博答辩预汇报等场景：先做 close reading、证据链梳理、真实图源清单和页面规划，再用 image-first 方式生成稳定的 16:9 PPT 页面。
+核心原则：**真实证据优先；明确交付路线；不把代码输出冒充成 Image2，也不把 Image2 输出冒充成可编辑模板。**
 
-它的核心原则很简单：**清楚先于好看，真实先于炫酷**。
+## 先选交付路线
 
----
+| 路线 | 产物与定位 | 是否可编辑 | 适用条件 |
+| --- | --- | --- | --- |
+| A. GPT-image-2 / Image2 全页路线 | 每页为已验收的整页图像，再封装进 PPTX；视觉自由度最高 | 页面内容通常不可逐对象编辑 | 已确认可用的全页 Image2 后端，并能忠实保留论文图裁图 |
+| B. 精确模板代码路线 | 直接继承内置 PPT 模板的母版、导航、页脚和文本/图片槽位，替换为当前论文内容 | 是 | 用户明确要求复刻内置模板，并接受固定导航语义 |
+| C. 实用代码 fallback | 从空白页按内置红黑灰风格生成可编辑页面 | 是 | 没有可用 Image2，也没有适合继承的干净模板 |
 
-## 重要：Image2 与降级交付
+三条路线都只允许使用论文主文、SI 或用户提供的科学图。不会生成、重绘或语义篡改实验数据图、谱图、显微图、结构图、表格或机理图。
 
-这个 skill 的默认高质量交付依赖 Image2-style 全页幻灯片生成后端：先生成完整 16:9 页面图，再把已验收页面封装进 PPTX。
+## 两组示例，分别代表两条路线
 
-如果当前 Codex / Claude Code 环境没有确认可用的 Image2-style 后端，skill 不会直接冒充生成高保真 PPTX。它会先询问你是否接受降级版 PPTX：
+### GPT-image-2 / Image2 全页视觉示例
 
-- 如果你不接受降级，它会交付 `deck_order_map.md`、`figure_source_manifest.md`、`page_briefs.md`、Image2 prompts 和 assembly notes，方便后续在支持 Image2 的环境继续生成。
-- 如果你明确接受降级，它会使用仓库现有 `assets/sample-literature-report.pptx` 的模板、版式节奏和红黑灰学术风格生成可编辑 fallback PPTX；这个版本不声称通过 Image2 manifest 或 image-only 验证。
-- fallback PPTX 仍然必须基于当前论文 / SI / 用户提供的真实图源。没有真实论文内容和真实图片时，不会生成正式文献汇报，只会生成页面方案或要求补充材料。
+以下四页是此前用 GPT-image-2 / Image2-style 全页路线制作的视觉示例。它们用于展示整页图像式交付的视觉上限；不代表代码模板输出，也不承诺对象级编辑。
 
----
+![Image2 示例封面](docs/images/demo-slide-01-title.jpg)
+![Image2 示例证据页](docs/images/demo-slide-02-evidence.jpg)
+![Image2 示例对比页](docs/images/demo-slide-03-comparison.jpg)
+![Image2 示例总结页](docs/images/demo-slide-04-summary.jpg)
 
-## 效果演示
+### 代码生成：精确继承模板的可编辑示例
 
-下面的页面来自仓库内置样例 `academic-slide-minimalist/assets/sample-literature-report.pptx`，用于展示 skill 追求的页面组织方式：真实论文图、清晰结论句、红黑灰学术风格、导航一致、证据链可讲。
+以下页面来自本仓库当前代码路线的真实运行：以油茶籽油水酶法论文图为输入，继承内置模板对象，替换文本、真实图表与图注，并通过构建、结构和模板保真三项审计。它不是 GPT-image-2 输出。
 
-注意：这个样例 PPT 是可编辑的风格和节奏参考，不是 Image2-only 最终交付样例，因此不要求通过 `validate_image_only_pptx.py`。
+![代码路线六页总览](docs/images/demo-code-template-overview.png)
 
-![文献汇报样例 1](docs/images/demo-slide-01-title.jpg)
-![文献汇报样例 2](docs/images/demo-slide-02-evidence.jpg)
-![文献汇报样例 3](docs/images/demo-slide-03-comparison.jpg)
-![文献汇报样例 4](docs/images/demo-slide-04-summary.jpg)
+![代码路线：模板继承 + 真实柱状图](docs/images/demo-code-template-evidence.png)
 
----
+![代码路线：完整响应面图 + 继承段落强调](docs/images/demo-code-template-response-surface.png)
 
-## 这个 skill 解决什么问题
+这组截图展示的是代码能力边界：模板的导航、标题、边距、页脚、段落和红色强调 run 来自原 PPT；论文图来自原始 PDF 的确定性裁取。为避免把论文图源作为仓库素材再分发，仓库保留预览图而不打包这份测试论文的完整 PPTX。
 
-很多 AI PPT 工具能把页面做得好看，但学术汇报最容易翻车的地方不是配色，而是：
+## 代码路线可以稳定完成什么
 
-- 没读懂论文主线，只是按 Figure 1、Figure 2 顺序堆图；
-- 用了“看起来像实验图”的假图或重绘图，科学内容不可信；
-- 页面标题是主题词，不是结论句，汇报时讲不出核心观点；
-- 结果部分全部塞进“研究结果”，老师听不出证据层次；
-- PPT 页面单独生成，导航、页码、标题尺度和图注风格不一致；
-- 汇报完成后缺少 backup、问答准备和可追溯的图源记录。
+在当前内置模板和真实图源齐备的前提下，代码路线可以稳定完成：
 
-`academic-slide-minimalist` 的目标是反过来做：先保证论文逻辑、图源和证据强度正确，再追求页面美观。
+- 选择并重排不同的模板源页，保留对应的母版、导航、标题、页脚和留白节奏；
+- 原位替换文本、图注、图片和多段正文，保留原段落与黑色/红色强调 run 的样式；
+- 对论文 PDF 图进行确定性渲染、裁边、等比放置和可读性检查；
+- 清理被替换图片的旧关系、旧演讲者备注、旧分节、未使用母版/版式及旧文档元数据；
+- 生成可编辑 PPTX，并执行构建报告、结构审计、模板保真审计和逐页预览。
 
----
+当前不承诺或主动拒绝：
 
-## 核心能力
+- 在没有模板的情况下，靠坐标代码像素级复刻任意未知 PPT；
+- 复制同一模板源页来无限扩展页数（当前稳定实现要求每页映射不同的源页）；
+- 把用户任意复杂 PPT、锁定对象或未知母版自动改造成精确模板；
+- 生成、补全或重绘科学数据图；
+- 把 Image2 的整页位图交付说成对象级可编辑 PPT。
 
-### 1. 论文到 PPT 的完整工作流
+Route C 可以稳定生成干净、可编辑的红黑灰学术页面，但它只遵循样例的视觉语法，不应称为“精确复刻模板”。
 
-从 main paper + supplementary information 出发，按固定顺序生成汇报结构：
+## 怎么调用
 
-```text
-close reading
--> paper logic tree
--> terminology table
--> main/SI evidence crosswalk
--> figure source manifest
--> adaptive navigation
--> deck order map
--> page briefs
--> image2 page generation
--> PPTX assembly
--> render audit / Q&A prep
-```
-
-这不是简单摘要，而是把论文论证链变成可讲、可问答、可追溯的页面序列。
-
-### 2. 真实图源优先
-
-科学视觉只能来自论文主文图、supplementary information / supporting information，以及用户上传的截图、原始图或已有 PPT 页面。
-
-禁止生成或重绘实验数据图，包括分子结构、晶体结构、谱图、显微图、XRD/NMR/IR/Raman/TG/DSC、吸附曲线、反应机理、性能图表等。允许的操作只包括裁剪、放大、对齐、遮边、加框、箭头、标签和短注释。
-
-### 3. 自适应导航，而不是固定模板
-
-默认样例节奏可以是：
+### 默认：让 skill 自己选择路线
 
 ```text
-封面 -> 基本信息 -> 研究背景 -> 研究思路 -> 研究结果 -> 总结启发 -> 汇报完毕
+使用 academic-slide-pragmatic-fallback，把这篇论文和 SI 制作成中文文献汇报 PPT。
+只使用真实论文图；先给出证据链与页面顺序；若 Image2 不可用，先征得我同意再选择模板代码路线或实用代码 fallback。
 ```
 
-但真正生成时会根据论文领域和证据链拆分导航。比如催化/材料论文可能拆成：
+### 要求 GPT-image-2 / Image2 整页交付
 
 ```text
-基本信息 | 研究背景 | 设计策略 | 性能验证 | 结构证据 | 机理解释 | 总结启发 | Backup
+使用 academic-slide-pragmatic-fallback，并使用已确认可用的 GPT-image-2 / Image2 全页后端生成 PPT。
+每页保留真实论文图裁图，输出 image2_manifest.json 和 image-only 验证结果。
 ```
 
-算法论文、生命科学论文、综述论文也会使用不同的导航语法，避免所有论文都被塞进同一套“研究结果”里。
+### 要求复刻内置模板并保持可编辑
 
-### 4. image-first 稳定出稿
+```text
+使用 academic-slide-pragmatic-fallback 的精确模板代码路线。
+按内置 sample-literature-report.pptx 继承对象生成可编辑 PPT；替换所有旧论文内容；使用真实论文图；完成结构审计、模板保真审计和逐页预览。
+```
 
-默认使用 image2 思路：每一页先生成完整 16:9 页面图，再插入 PPTX。这样能最大限度避免文本框跑版、字体替换、元素错位和跨设备渲染问题。
+## 精确模板代码路线的质量门槛
 
-如果用户明确要求可编辑版本，或在没有 Image2 后端时明确接受降级版本，skill 会切换到基于现有样例模板的 fallback / editable output 相关流程，但不会把降级版假装成 Image2-only 高保真 PPT。
+精确模板模式必须同时满足：
 
-### 5. 质检和答辩准备
-
-内置 references 覆盖页面顺序和主线检查、图源 manifest、图像可读性标准、术语一致性、证据强度分级、backup slides、老师可能追问的问题、最终交付预览和渲染审计。
-
----
-
-## 适合谁用
-
-- 需要做中文文献汇报的本科生、研究生和科研人员；
-- 需要把一篇论文讲成 20 页以上组会 PPT 的用户；
-- 已经有样例 PPT，希望 AI 按样例节奏重构新论文汇报的人；
-- 对“不能造假图”“必须引用真实论文图”要求很高的学术场景；
-- 需要先诊断已有 PPT，再局部重画或重排整套汇报的人。
-
-不适合：一键商业路演 PPT、纯视觉概念页、伪造实验数据、重绘论文图，或生成“看起来像论文图”的假图。
-
----
+1. `build_fallback_template_pptx.py --strict --fail-on-warnings` 通过；
+2. `audit_fallback_template_pptx.py --check-masters --exact-template --fail-on-review` 通过；
+3. `audit_exact_template_fidelity.py --plan ... --build-report ... --fail-on-review` 通过；
+4. 每页渲染预览与源模板对照，确认导航、标题、边距、页脚、图框和留白没有漂移；
+5. PPTX 内没有旧论文图片、备注、分节、未使用母版/版式、重复 ZIP 部件或过期文档元数据。
 
 ## 安装
 
-### 方式一：让 AI 助手安装
-
-把下面这段发给你的 Codex / Claude Code：
-
-```text
-帮我安装这个 Codex skill：
-https://github.com/fangyuanopus/literature-report-ppt-builder
-
-安装到我的本地 skills 目录，并告诉我重启后应该怎么调用。
-```
-
-### 方式二：手动安装到 Codex
-
-```powershell
-git clone https://github.com/fangyuanopus/literature-report-ppt-builder.git
-cd literature-report-ppt-builder
-Copy-Item -Recurse .\academic-slide-minimalist "$env:USERPROFILE\.codex\skills\academic-slide-minimalist"
-```
-
-重启 Codex 会话后，skill metadata 会被重新发现。
-
-### 方式三：手动安装到 Claude Code
+### Codex
 
 ```bash
 git clone https://github.com/fangyuanopus/literature-report-ppt-builder.git
-cd literature-report-ppt-builder
+cp -R literature-report-ppt-builder/skills/academic-slide-pragmatic-fallback \
+  ~/.codex/skills/academic-slide-pragmatic-fallback
+```
+
+重启 Codex 会话后即可按自然语言调用。
+
+### Claude Code
+
+```bash
+git clone https://github.com/fangyuanopus/literature-report-ppt-builder.git
 mkdir -p ~/.claude/skills
-cp -R academic-slide-minimalist ~/.claude/skills/academic-slide-minimalist
+cp -R literature-report-ppt-builder/skills/academic-slide-pragmatic-fallback \
+  ~/.claude/skills/academic-slide-pragmatic-fallback
 ```
 
----
+## 输出与可追溯性
 
-## 怎么用
-
-安装后直接用自然语言触发即可。
-
-### 从论文生成完整文献汇报
+复杂任务至少维护以下文件：
 
 ```text
-使用 academic-slide-minimalist，把这篇 main paper 和 SI 做成一套中文文献汇报 PPT。
-要求至少 20 页，只使用论文和 SI 的真实图片，先梳理论文逻辑和页面顺序，再生成 PPT。
-```
-
-### 按样例 PPT 的节奏重构
-
-```text
-按照我给的样例 PPT 的页面节奏和红黑灰学术风格，重构这篇论文的文献汇报。
-导航不要硬套模板，要根据论文证据链自适应拆分。
-```
-
-### 诊断已有 PPT
-
-```text
-先诊断我这个已有文献汇报 PPT 的问题：
-检查主线、页面顺序、导航、图像可读性、标题结论性和答辩风险。
-然后把页面分成必须重画、局部修复、可以保留三类。
-```
-
-### 逐段精读论文
-
-```text
-用 academic-slide-minimalist 的 close reading 模式，逐段翻译并讲解这篇论文。
-每次只处理一个原文段落，等我说“继续”再进入下一段。
-```
-
----
-
-## 输出物
-
-根据任务复杂度，skill 会生成或维护这些中间产物：
-
-```text
-paper_logic_tree.md
-terminology_table.md
-main_si_crosswalk.md
-figure_source_manifest.md
-adaptive_navigation_plan.md
 deck_order_map.md
-slide_outline.md
+figure_source_manifest.md
 page_briefs.md
-image2_generation_plan.md
-image_generation_status.md
-speaker_notes.md
-quality_check_report.md
-deck_diagnosis_report.md
-redraw_priority_plan.md
-final_delivery_preview.md
+fallback_edit_plan.json
+prepared_figure_manifest.json
+fallback_build_report.json
+structural_audit.json
+fidelity_audit.json
+rendered_slides/
+contact_sheet.png
 final_presentation.pptx
 ```
 
-默认最终交付是稳定的 image-first PPTX。若当前环境没有可用 Image2-style 后端，skill 会先询问是否接受降级 PPTX；未获得明确同意时，只交付页面方案、图源清单、page briefs、Image2 prompts 和 assembly notes。若接受降级，fallback PPTX 必须基于现有 `assets/sample-literature-report.pptx` 与 `references/sample-template-slot-manifest.json` 复制源模板页并替换继承 slot，而不是用代码仿画模板坐标；交付前还要检查文字重叠、内容溢出、页面过空和图像可读性。复杂任务也建议保留 `figure_source_manifest.md` 和 `deck_order_map.md`，方便答辩前回查每一页图和结论来自哪里。
+Image2 路线还需要 `image2_manifest.json`；代码路线则需要模板槽位清单、构建报告与两类审计报告。不要混用这两组验证声明。
 
----
-
-## 项目结构
+## 仓库结构
 
 ```text
-academic-slide-minimalist/
-  SKILL.md
-  agents/
-    openai.yaml
-  assets/
-    sample-literature-report.pptx
-  scripts/
-    audit_fallback_template_pptx.py
-    build_fallback_template_pptx.py
-    draft_fallback_edit_plan.py
-    extract_template_slot_manifest.py
-    prepare_fallback_figure.py
-  references/
-    close-reading-rules.md
-    paper-to-ppt-workflow.md
-    sample-template-intro.md
-    sample-template-slot-manifest.json
-    adaptive-navigation.md
-    deck-order-map.md
-    figure-source-manifest.md
-    quality-gates.md
-    ...
+skills/
+  academic-slide-pragmatic-fallback/   # 当前维护的入口：Image2、精确模板与实用代码 fallback
+    SKILL.md
+    assets/sample-literature-report.pptx
+    scripts/
+      build_fallback_template_pptx.py
+      audit_fallback_template_pptx.py
+      audit_exact_template_fidelity.py
+      build_pragmatic_fallback_pptx.py
 docs/
-  README.en.md
   images/
-    demo-slide-01-title.jpg
-    demo-slide-02-evidence.jpg
-    demo-slide-03-comparison.jpg
-    demo-slide-04-summary.jpg
+    demo-slide-*.jpg                   # GPT-image-2 / Image2 全页视觉示例
+    demo-code-template-*.png           # 代码生成、模板继承示例
+academic-slide-minimalist/             # 兼容性保留的旧入口；不再代表当前代码路线
 ```
 
-`SKILL.md` 是入口和总流程。`references/` 采用 progressive disclosure：只有在对应阶段才读取具体文件，避免一次性把所有规则塞进上下文。
+## 致谢
 
-`assets/sample-literature-report.pptx` 是风格和节奏参考，不是科学证据来源。做新论文时必须重新从该论文和 SI 提取真实图源。
-
----
-
-## 内置参考模块
-
-| 模块 | 用途 |
-| --- | --- |
-| `close-reading-rules.md` | 逐段精读、翻译、术语保持和深度解读 |
-| `paper-to-ppt-workflow.md` | 从论文到 PPT 的主流程 |
-| `adaptive-navigation.md` | 根据领域和证据链生成导航 |
-| `deck-order-map.md` | 锁定页序、章节、标题、图源和 backup 状态 |
-| `figure-source-manifest.md` | 记录每张图来自哪里、支撑什么结论 |
-| `fallback-template-pptx.md` | 无 Image2 时的模板化 fallback PPTX、真实图源和布局 QA 规则 |
-| `fallback-template-edit-spec.md` | 无 Image2 fallback 的模板槽位清单、选页映射、继承对象替换和容量检查契约 |
-| `sample-template-intro.md` | 样板 PPT 的风格、页角色、选页和 slot 使用说明 |
-| `sample-template-slot-manifest.json` | 从样板 PPT 提取的 source slide、文本/图片 slot、坐标、容量和替换规则 |
-| `scripts/draft_fallback_edit_plan.py` | 从结构化 slide briefs 草拟 `fallback_edit_plan.json`，自动选择模板页和继承 slot |
-| `scripts/build_fallback_template_pptx.py` | 按 `fallback_edit_plan.json` 复制/裁剪模板页并替换继承 slot，输出 fallback PPTX 与 build report |
-| `scripts/audit_fallback_template_pptx.py` | 在渲染器不可用时执行结构化 QA，检查页数、构建警告和明显样板科学内容残留 |
-| `page-brief-template.md` | 每页生成前的页面 brief |
-| `quality-gates.md` | 最终质检标准 |
-| `question-prep.md` | 准备老师/导师可能追问的问题 |
-| `backup-slides.md` | 判断哪些内容放入 backup |
-
----
-
-## 与普通 AI PPT skill 的区别
-
-| 维度 | 普通 PPT 生成 | academic-slide-minimalist |
-| --- | --- | --- |
-| 优先级 | 视觉优先 | 论文逻辑和证据优先 |
-| 图像来源 | 可能生成概念图 | 只允许真实论文/SI/用户图 |
-| 页面组织 | 常按 figure 顺序堆叠 | 按问题、策略、证据、机制、启发组织 |
-| 导航 | 固定模板 | 按论文领域自适应 |
-| 输出稳定性 | 可编辑但易跑版 | 默认 image-first 稳定页面 |
-| 答辩准备 | 通常没有 | 包含 speaker notes、backup、Q&A 风险 |
-
----
-
-## 验证 skill
-
-如果你本地有 Codex 的 `skill-creator` 系统 skill，可以运行：
-
-```powershell
-$env:PYTHONUTF8 = "1"
-python "$env:USERPROFILE\.codex\skills\.system\skill-creator\scripts\quick_validate.py" .\academic-slide-minimalist
-```
-
-通过时会输出：
-
-```text
-Skill is valid!
-```
-
----
-
-## 社区与致谢
-
-- [LINUX DO](https://linux.do/)
 - [JuneYaooo/gpt-image2-ppt-skills](https://github.com/JuneYaooo/gpt-image2-ppt-skills)
-
-本项目认可并感谢 LINUX DO 社区在中文开发者开源交流、项目分享和技术讨论中的价值。除非社区另有明确说明，此处仅为社区致谢和链接，不代表官方背书。
-
-README 的展示组织方式参考了开源社区中优秀的 skill 项目写法，特别是 `gpt-image2-ppt-skills` 对“效果图 + 安装 + 使用示例”的呈现方式。
-
----
-
-## 开源说明
-
-这个仓库开放的是 skill 工作流、提示规则、参考模板和样例节奏。使用者仍需自行确认论文、SI、截图和样例 PPT 的使用权限，以及课堂、组会或公开演讲场景下对论文图片的引用要求。
-
-本项目不鼓励也不支持伪造实验数据、伪造论文图或生成误导性科学结论。
-
----
-
-## License
-
-MIT License. See [LICENSE](LICENSE).
+- [LINUX DO](https://linux.do/)
