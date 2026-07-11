@@ -39,7 +39,7 @@ Required steps:
 3. Select a source slide for every output slide based on the needed page role and evidence density.
 4. Create a `fallback_edit_plan.json`, `template-frame-map.json`, or equivalent mapping that records each output slide, source slide, reuse mode, and edit targets.
 5. For any slide whose scientific content changes, define explicit edit targets for inherited title, body, figure, caption, table, annotation, footer, and placeholder objects. Do not label a content-bearing slide as preserve-only.
-6. Duplicate the mapped source slides into a starter deck before editing.
+6. Copy the template and prune/reorder it to the mapped source slides before editing. The checked-in builder currently requires distinct source slides; choose an equivalent unused archetype instead of pretending to clone a slide part.
 7. Prepare real source figures by trimming PDF/screenshot margins before insertion. Use `scripts/prepare_fallback_figure.py` or an equivalent deterministic crop step, and record the result in `prepared_figure_manifest.json`.
 8. Edit inherited objects in place. Replace inherited sample figures with prepared real current-paper/SI/user figures, and rewrite inherited sample text with current-paper claims. For figures or tables whose aspect ratio does not fit a single inherited slot, adapt within the inherited image region instead of forcing a cramped slot fill.
 9. Add new objects only when the mapped source slide lacks an inherited object for the required role, and record the reason and bounded placement.
@@ -75,6 +75,8 @@ Check especially for:
 - background groups that visually frame an empty area without serving the new layout.
 
 Do not leave a shape in the deck merely because it came from the template. Every visible object must either be template chrome (navigation, footer, page number, rule line) or current-deck content.
+
+Cleanup also applies inside the PPTX package. Remove unused slide relationships, replaced image relationships, inherited notes/notes masters, stale section IDs, unused masters/layouts, old core/app/custom document properties, and old slide-count/title metadata. A clean render is not proof that the package is clean.
 
 Also inspect inherited PowerPoint placeholders that may not be obvious in rendered PNGs. Empty title, footer, date, slide-number, picture, and content placeholders must be filled, deleted, or explicitly documented as intentional template chrome. Do not pass cleanup by overlaying new objects on top of empty placeholders.
 

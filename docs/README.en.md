@@ -1,331 +1,154 @@
-# academic-slide-minimalist
+# Literature Report PPT Builder
 
-Read the paper and supplementary information first, then build a Chinese academic presentation that explains the evidence chain clearly.
+Turn a paper's argument, real figures, and defensible conclusions into a Chinese literature-report deck. The maintained entry point is [academic-slide-pragmatic-fallback](../skills/academic-slide-pragmatic-fallback/SKILL.md).
 
 English | [中文](../README.md)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](../LICENSE)
-[![Codex Skill](https://img.shields.io/badge/Codex-Skill-blue)](../academic-slide-minimalist/SKILL.md)
-[![PPTX](https://img.shields.io/badge/output-PPTX-orange)](../academic-slide-minimalist/assets/sample-literature-report.pptx)
-[![Language](https://img.shields.io/badge/deck_language-Chinese-red)](README.en.md)
+[![Codex Skill](https://img.shields.io/badge/Codex-Skill-blue)](../skills/academic-slide-pragmatic-fallback/SKILL.md)
+[![Template](https://img.shields.io/badge/template-editable_PPTX-orange)](../skills/academic-slide-pragmatic-fallback/assets/sample-literature-report.pptx)
 
-`academic-slide-minimalist` is a Claude Code / Codex skill for rigorous academic literature-report decks. It is designed for Chinese paper presentations, journal clubs, course reports, thesis-defense rehearsals, and image-first PPT workflows.
+Core principle: **real evidence first, explicit delivery route, and no confusion between Image2 output and editable code output.**
 
-The core principle is simple: **clarity before beauty, real evidence before visual tricks**.
+## Choose a delivery route first
 
----
+| Route | Deliverable | Editable | Use when |
+| --- | --- | --- | --- |
+| A. GPT-image-2 / Image2 full-slide route | An approved full-slide image per page, then packaged into PPTX | Usually no object-level editing | A full-slide Image2 backend is confirmed and can preserve supplied paper crops faithfully |
+| B. Exact-template code route | Inherit the bundled PPT master's chrome, navigation, footer, and slots, then replace them with current-paper content | Yes | The user explicitly wants the bundled template reproduced and accepts its fixed navigation semantics |
+| C. Pragmatic code fallback | Create editable pages from a blank canvas using the bundled red/black/gray visual grammar | Yes | Image2 is unavailable and no clean template can be inherited |
 
-## Important: Image2 and Fallback Delivery
+Every route uses only scientific visuals from the paper, SI, or the user. It never generates, redraws, or changes the meaning of scientific data figures, spectra, microscopy, structures, tables, or mechanisms.
 
-The default high-quality delivery path depends on an Image2-style full-slide generation backend: generate complete 16:9 slide images first, then package accepted pages into a PPTX.
+## Two demo sets for two different routes
 
-If the current Codex / Claude Code environment cannot confirm an available Image2-style backend, the skill will not pretend to create a high-fidelity Image2-only PPTX. It will first ask whether you accept a lower-fidelity fallback PPTX:
+### GPT-image-2 / Image2 full-slide visual demos
 
-- If you do not accept fallback output, it will deliver `deck_order_map.md`, `figure_source_manifest.md`, `page_briefs.md`, Image2 prompts, and assembly notes so the deck can be continued later in an Image2-capable environment.
-- If you explicitly accept fallback output, it will create an editable fallback PPTX based on the existing `assets/sample-literature-report.pptx` template, page rhythm, and red/black/gray academic style. The file will be clearly labeled as a fallback version and will not claim Image2 manifest or image-only validation.
-- A fallback PPTX must still be grounded in the current paper, SI, and real user-provided/source figures. Without real paper content and real images, the skill should deliver planning artifacts or ask for the missing sources instead of creating a formal literature-report deck.
+These pages were produced with the earlier GPT-image-2 / Image2-style full-slide route. They demonstrate the visual ceiling of an image-first delivery, not the editable code-template route.
 
----
+![Image2 title demo](images/demo-slide-01-title.jpg)
+![Image2 evidence demo](images/demo-slide-02-evidence.jpg)
+![Image2 comparison demo](images/demo-slide-03-comparison.jpg)
+![Image2 summary demo](images/demo-slide-04-summary.jpg)
 
-## Demo
+### Code-generated editable exact-template demo
 
-The pages below are exported from `academic-slide-minimalist/assets/sample-literature-report.pptx`. They show the intended deck style: real paper figures, conclusion-style titles, restrained red/black/gray academic design, consistent navigation, and traceable evidence.
+These pages are from the current code route: real Camellia oil paper figures were inserted into inherited template objects, and the deck passed build, structural, and template-fidelity audits. This is not a GPT-image-2 output.
 
-Note: this sample PPT is an editable style and rhythm reference, not an Image2-only final-delivery sample, so it is not expected to pass `validate_image_only_pptx.py`.
+![Code-route overview](images/demo-code-template-overview.png)
 
-![Literature report demo 1](images/demo-slide-01-title.jpg)
-![Literature report demo 2](images/demo-slide-02-evidence.jpg)
-![Literature report demo 3](images/demo-slide-03-comparison.jpg)
-![Literature report demo 4](images/demo-slide-04-summary.jpg)
+![Code route: inherited layout and real bar chart](images/demo-code-template-evidence.png)
 
----
+![Code route: complete response surfaces and inherited text emphasis](images/demo-code-template-response-surface.png)
 
-## What Problem It Solves
+The screenshots show the boundary of this route: navigation, titles, margins, footer, paragraphs, and red emphasis runs come from the original PPT; scientific figures are deterministic crops from the source PDF. The repository keeps preview images rather than redistributing the complete test-paper PPTX and its underlying figure assets.
 
-Many AI PPT tools can make slides look polished, but academic presentations usually fail for different reasons:
+## What the code route reliably does
 
-- The model summarizes figures without understanding the paper's argument.
-- Fake or redrawn scientific visuals appear in place of real paper figures.
-- Slide titles describe topics instead of conclusions.
-- Dense results are hidden inside one generic "Results" section.
-- Separately generated pages have inconsistent navigation, numbering, typography, and annotation style.
-- The final deck lacks backup slides, Q&A preparation, and a traceable figure-source record.
+With the bundled template and real source figures available, it reliably:
 
-`academic-slide-minimalist` reverses that order: it first controls paper logic, source figures, and evidence strength, then designs the slide pages.
+- selects and reorders distinct template source slides while preserving their master, navigation, title, footer, and whitespace rhythm;
+- replaces text, captions, images, and multi-paragraph body copy while retaining inherited paragraph and black/red emphasis-run formatting;
+- renders, trims, contains, and checks real PDF figures deterministically;
+- removes stale media relationships, notes, notes masters, sections, unused masters/layouts, and old document metadata;
+- produces an editable PPTX with a build report, structural audit, template-fidelity audit, and page-by-page preview.
 
----
+It does not claim to:
 
-## Core Capabilities
+- pixel-copy an arbitrary, unknown PPT without an inherited template;
+- clone one source slide indefinitely to create extra pages (the stable implementation maps each output page to a distinct source page);
+- convert every user PPT with locked objects or unknown masters into an exact editable template;
+- generate, fill in, or redraw scientific data;
+- call an Image2 full-slide bitmap an object-editable PPT.
 
-### 1. Full paper-to-PPT workflow
+Route C can reliably create clean editable academic pages in the sample's visual grammar, but it must not be described as an exact reproduction of the template.
 
-The skill starts from a main paper plus supplementary information and follows a staged workflow:
+## Invocation examples
 
-```text
-close reading
--> paper logic tree
--> terminology table
--> main/SI evidence crosswalk
--> figure source manifest
--> adaptive navigation
--> deck order map
--> page briefs
--> image2 page generation
--> PPTX assembly
--> render audit / Q&A prep
-```
-
-This is not a shallow summary. It converts the paper's argument into a speakable, defensible, traceable slide sequence.
-
-### 2. Real scientific figures only
-
-Scientific visuals must come from the main paper, supplementary information, user-provided screenshots, raw figures, or user-provided PPT pages.
-
-The skill forbids generating or redrawing experimental data, including molecular structures, crystal structures, spectra, microscopy images, XRD/NMR/IR/Raman/TG/DSC, adsorption curves, mechanisms, and performance charts. Allowed operations are deterministic only: crop, scale, align, mask margins, add boxes, arrows, labels, and short callouts.
-
-### 3. Adaptive navigation
-
-The sample rhythm may look like:
+### Let the skill choose the valid route
 
 ```text
-Cover -> Basic Information -> Background -> Research Idea -> Results -> Summary -> Closing
+Use academic-slide-pragmatic-fallback to build a Chinese literature-report PPT from this paper and SI.
+Use only real paper figures. First prepare the evidence chain and deck order. If Image2 is unavailable, ask for my consent before choosing an inherited-template code route or pragmatic code fallback.
 ```
 
-But the actual deck should derive navigation from the current paper. A catalysis or materials paper may use:
+### Require GPT-image-2 / Image2 full-slide delivery
 
 ```text
-Basic Info | Background | Design Strategy | Performance | Structure Evidence | Mechanism | Summary | Backup
+Use academic-slide-pragmatic-fallback with a confirmed GPT-image-2 / Image2 full-slide backend.
+Preserve supplied real paper figure crops, and deliver image2_manifest.json plus image-only validation.
 ```
 
-Algorithm, biology, computational, and review papers can use different navigation grammars.
+### Require an editable reproduction of the bundled template
 
-### 4. Image-first stable delivery
+```text
+Use academic-slide-pragmatic-fallback in exact-template code mode.
+Inherit objects from sample-literature-report.pptx, replace every prior-paper object with real current-paper content, and complete structural, fidelity, and rendered-slide QA.
+```
 
-The default output is image-first: each slide is generated as a complete 16:9 page image, then inserted into PPTX. This reduces layout drift, font substitution, misplaced elements, and cross-device rendering problems.
+## Exact-template quality gates
 
-Editable output is treated as a separate mode and is used only when explicitly requested, or when Image2 is unavailable and the user explicitly accepts a fallback version based on the bundled sample template. A fallback deck must not be presented as an Image2-only high-fidelity deck.
+An exact-template deck must pass all of these:
 
-### 5. Quality gates and Q&A preparation
-
-The references cover deck order, figure-source manifests, image readability, terminology control, evidence strength, backup slides, advisor questions, final preview, and render audit.
-
----
-
-## Who It Is For
-
-- Students and researchers preparing Chinese literature-report presentations.
-- Users who need a 20+ page journal-club or group-meeting deck from one paper.
-- Users with a sample deck who want a new paper rebuilt in the same academic rhythm.
-- Academic scenarios where real paper figures and traceability matter.
-- Users who want to diagnose an existing deck before redrawing or reordering it.
-
-It is not intended for generic business decks, flashy concept pages, fake experimental data, redrawn paper figures, or synthetic visuals that merely look scientific.
-
----
+1. `build_fallback_template_pptx.py --strict --fail-on-warnings`;
+2. `audit_fallback_template_pptx.py --check-masters --exact-template --fail-on-review`;
+3. `audit_exact_template_fidelity.py --plan ... --build-report ... --fail-on-review`;
+4. rendered comparison with the source template for navigation, titles, margins, footer, figure frames, and whitespace;
+5. no legacy paper images, notes, sections, unused masters/layouts, duplicate ZIP parts, or stale document metadata.
 
 ## Installation
 
-### Option 1: Ask your AI assistant to install it
-
-Send this to Codex / Claude Code:
-
-```text
-Install this Codex skill:
-https://github.com/fangyuanopus/literature-report-ppt-builder
-
-Install it into my local skills directory and tell me how to invoke it after restart.
-```
-
-### Option 2: Manual install for Codex
-
-```powershell
-git clone https://github.com/fangyuanopus/literature-report-ppt-builder.git
-cd literature-report-ppt-builder
-Copy-Item -Recurse .\academic-slide-minimalist "$env:USERPROFILE\.codex\skills\academic-slide-minimalist"
-```
-
-Restart Codex so the skill metadata can be discovered.
-
-### Option 3: Manual install for Claude Code
+### Codex
 
 ```bash
 git clone https://github.com/fangyuanopus/literature-report-ppt-builder.git
-cd literature-report-ppt-builder
+cp -R literature-report-ppt-builder/skills/academic-slide-pragmatic-fallback \
+  ~/.codex/skills/academic-slide-pragmatic-fallback
+```
+
+Restart Codex, then invoke the skill in natural language.
+
+### Claude Code
+
+```bash
+git clone https://github.com/fangyuanopus/literature-report-ppt-builder.git
 mkdir -p ~/.claude/skills
-cp -R academic-slide-minimalist ~/.claude/skills/academic-slide-minimalist
+cp -R literature-report-ppt-builder/skills/academic-slide-pragmatic-fallback \
+  ~/.claude/skills/academic-slide-pragmatic-fallback
 ```
 
----
+## Traceable outputs
 
-## Usage Examples
-
-### Build a complete literature-report deck
+For a non-trivial deck, keep at least:
 
 ```text
-Use academic-slide-minimalist to turn this main paper and SI into a Chinese literature-report PPT.
-Use at least 20 slides. Use only real figures from the paper and SI. First build the paper logic and deck order, then generate the PPT.
-```
-
-### Follow a sample deck rhythm
-
-```text
-Follow the page rhythm and restrained red/black/gray academic style of my sample PPT.
-Do not hard-code the navigation. Split it based on the paper's evidence chain.
-```
-
-### Diagnose an existing PPT
-
-```text
-First diagnose this literature-report PPT.
-Check the mainline, page order, navigation, figure readability, conclusion-style titles, and Q&A risks.
-Classify pages into must-redraw, local-repair, and keep.
-```
-
-### Close-read a paper paragraph by paragraph
-
-```text
-Use the close-reading mode of academic-slide-minimalist.
-Translate and explain this paper paragraph by paragraph. Process only one original paragraph at a time and wait for me to say "continue".
-```
-
----
-
-## Outputs
-
-Depending on the task, the skill may generate or maintain:
-
-```text
-paper_logic_tree.md
-terminology_table.md
-main_si_crosswalk.md
-figure_source_manifest.md
-adaptive_navigation_plan.md
 deck_order_map.md
-slide_outline.md
+figure_source_manifest.md
 page_briefs.md
-image2_generation_plan.md
-image_generation_status.md
-speaker_notes.md
-quality_check_report.md
-deck_diagnosis_report.md
-redraw_priority_plan.md
-final_delivery_preview.md
+fallback_edit_plan.json
+prepared_figure_manifest.json
+fallback_build_report.json
+structural_audit.json
+fidelity_audit.json
+rendered_slides/
+contact_sheet.png
 final_presentation.pptx
 ```
 
-The default final deliverable is a stable image-first PPTX. If the current environment has no available Image2-style backend, the skill will first ask whether you accept a fallback PPTX; without explicit consent, it delivers only page plans, figure manifests, page briefs, Image2 prompts, and assembly notes. If fallback is accepted, the PPTX must duplicate source slides from `assets/sample-literature-report.pptx` using `references/sample-template-slot-manifest.json` and replace inherited slots, not redraw approximate template coordinates in code. It must be checked for text overlap, clipping, sparse layouts, and figure readability before delivery. For complex tasks, keep `figure_source_manifest.md` and `deck_order_map.md` so every figure and claim can be traced back before the presentation.
+The Image2 route additionally requires `image2_manifest.json`. The code route requires the template slot map, build report, and both audits. Do not mix their validation claims.
 
----
-
-## Repository Structure
+## Repository layout
 
 ```text
-academic-slide-minimalist/
-  SKILL.md
-  agents/
-    openai.yaml
-  assets/
-    sample-literature-report.pptx
-  scripts/
-    audit_fallback_template_pptx.py
-    build_fallback_template_pptx.py
-    draft_fallback_edit_plan.py
-    extract_template_slot_manifest.py
-    prepare_fallback_figure.py
-  references/
-    close-reading-rules.md
-    paper-to-ppt-workflow.md
-    sample-template-intro.md
-    sample-template-slot-manifest.json
-    adaptive-navigation.md
-    deck-order-map.md
-    figure-source-manifest.md
-    quality-gates.md
-    ...
-docs/
-  README.en.md
-  images/
-    demo-slide-01-title.jpg
-    demo-slide-02-evidence.jpg
-    demo-slide-03-comparison.jpg
-    demo-slide-04-summary.jpg
+skills/
+  academic-slide-pragmatic-fallback/   # maintained entry: Image2, exact-template, pragmatic fallback
+docs/images/
+  demo-slide-*.jpg                     # GPT-image-2 / Image2 full-slide demos
+  demo-code-template-*.png             # code-generated, inherited-template demos
+academic-slide-minimalist/              # retained compatibility entry; not the current code route
 ```
-
-`SKILL.md` is the entry point. `references/` uses progressive disclosure: each stage loads only the rules it needs.
-
-`assets/sample-literature-report.pptx` is a style and rhythm reference, not a scientific source for new papers.
-
----
-
-## Built-in Reference Modules
-
-| Module | Purpose |
-| --- | --- |
-| `close-reading-rules.md` | Paragraph-level reading, translation, terminology control, and commentary |
-| `paper-to-ppt-workflow.md` | Main paper-to-PPT production process |
-| `adaptive-navigation.md` | Domain-specific navigation design |
-| `deck-order-map.md` | Page order, section, title, source figures, and backup state |
-| `figure-source-manifest.md` | Source tracking for every figure and claim |
-| `fallback-template-pptx.md` | Template-based fallback PPTX, real-source, and layout QA rules when Image2 is unavailable |
-| `fallback-template-edit-spec.md` | Slot manifest, slide mapping, inherited-object replacement, and capacity checks for no-Image2 fallback |
-| `sample-template-intro.md` | Human-readable style, page-role, selection, and slot-use guidance for the sample PPTX |
-| `sample-template-slot-manifest.json` | Extracted source slides, text/image slots, coordinates, capacities, and replacement rules from the sample deck |
-| `scripts/draft_fallback_edit_plan.py` | Draft `fallback_edit_plan.json` from structured slide briefs by selecting template pages and inherited slots |
-| `scripts/build_fallback_template_pptx.py` | Build fallback PPTX and build report from `fallback_edit_plan.json` by pruning template slides and replacing inherited slots |
-| `scripts/audit_fallback_template_pptx.py` | Structural QA fallback when rendering is unavailable; checks slide count, build warnings, and obvious sample scientific residue |
-| `page-brief-template.md` | Page brief before generation |
-| `quality-gates.md` | Final quality checks |
-| `question-prep.md` | Advisor/teacher Q&A preparation |
-| `backup-slides.md` | Backup slide planning |
-
----
-
-## Difference from Generic AI PPT Skills
-
-| Dimension | Generic AI PPT generation | academic-slide-minimalist |
-| --- | --- | --- |
-| Priority | Visual polish first | Paper logic and evidence first |
-| Figure source | May create concept visuals | Real paper/SI/user figures only |
-| Page organization | Often follows figure order | Organized by problem, strategy, evidence, mechanism, and takeaway |
-| Navigation | Fixed template | Derived from the paper domain |
-| Output stability | Editable but layout may drift | Image-first stable pages by default |
-| Defense prep | Usually absent | Speaker notes, backup, and Q&A risks |
-
----
-
-## Validation
-
-If you have the Codex `skill-creator` system skill locally:
-
-```powershell
-$env:PYTHONUTF8 = "1"
-python "$env:USERPROFILE\.codex\skills\.system\skill-creator\scripts\quick_validate.py" .\academic-slide-minimalist
-```
-
-Expected output:
-
-```text
-Skill is valid!
-```
-
----
 
 ## Acknowledgements
 
-The README presentation style is inspired by strong open-source skill projects, especially [JuneYaooo/gpt-image2-ppt-skills](https://github.com/JuneYaooo/gpt-image2-ppt-skills) and its clear use of demos, installation steps, and usage examples.
-
-Thanks to LINUX DO and other Chinese AI developer communities for sharing practical Claude Code / Codex / image2 / PPT workflows.
-
----
-
-## Open-source Notes
-
-This repository provides the skill workflow, prompt rules, references, and sample rhythm. Users are responsible for checking permission to use papers, SI files, screenshots, and sample PPT materials in their own classroom, group meeting, or public presentation context.
-
-This project does not support fabricating experimental data, fake paper figures, or misleading scientific conclusions.
-
----
-
-## License
-
-MIT License. See [LICENSE](../LICENSE).
+- [JuneYaooo/gpt-image2-ppt-skills](https://github.com/JuneYaooo/gpt-image2-ppt-skills)
+- [LINUX DO](https://linux.do/)

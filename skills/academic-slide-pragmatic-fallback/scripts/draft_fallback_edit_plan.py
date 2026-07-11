@@ -18,7 +18,8 @@ from typing import Any
 from PIL import Image
 
 
-DEFAULT_MANIFEST = Path("academic-slide-minimalist/references/sample-template-slot-manifest.json")
+SKILL_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_MANIFEST = SKILL_ROOT / "references" / "sample-template-slot-manifest.json"
 
 ROLE_FALLBACKS = {
     "cover": ["cover"],
