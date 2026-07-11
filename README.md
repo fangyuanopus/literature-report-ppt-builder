@@ -10,6 +10,28 @@
 
 核心原则：**真实证据优先；明确交付路线；不把代码输出冒充成 Image2，也不把 Image2 输出冒充成可编辑模板。**
 
+## 先分析论文，再生成页面
+
+这个 skill 不是把 PDF 摘要直接塞进模板。完整任务先生成并校验 `paper_analysis.json`，把论文理解变成后续页面规划必须遵守的证据契约：
+
+```text
+论文主文 + SI
+  → 逻辑树（对象、问题、策略、方法、结论、局限）
+  → 图表记录（直接观察到什么、不能单独证明什么）
+  → 证据链（问题 → 图表 → 解释 → 页面结论）
+  → 导航与逐页计划
+  → Route A / B / C 生成与验收
+```
+
+契约要求每张证据页回溯到真实图表和证据链；每张图必须有来源文件、页码、图/表编号、直接观察和证据边界。这样可以避免“图很好看但不支持标题”、把推测机制说成结论，或在改版时悄悄改变论证顺序。
+
+```bash
+python skills/academic-slide-pragmatic-fallback/scripts/validate_paper_analysis.py \
+  paper_analysis.json --out paper_analysis_validation.json --fail-on-review
+```
+
+可直接参考 [分析契约](skills/academic-slide-pragmatic-fallback/references/paper-analysis-contract.md) 和 [可验证示例](skills/academic-slide-pragmatic-fallback/references/paper-analysis.example.json)。
+
 ## 先选交付路线
 
 | 路线 | 产物与定位 | 是否可编辑 | 适用条件 |
@@ -69,7 +91,7 @@ Route C 可以稳定生成干净、可编辑的红黑灰学术页面，但它只
 
 ```text
 使用 academic-slide-pragmatic-fallback，把这篇论文和 SI 制作成中文文献汇报 PPT。
-只使用真实论文图；先给出证据链与页面顺序；若 Image2 不可用，先征得我同意再选择模板代码路线或实用代码 fallback。
+只使用真实论文图；先建立并校验 paper_analysis.json，再从其中导出证据链、导航和页面顺序；若 Image2 不可用，先征得我同意再选择模板代码路线或实用代码 fallback。
 ```
 
 ### 要求 GPT-image-2 / Image2 整页交付
@@ -123,6 +145,8 @@ cp -R literature-report-ppt-builder/skills/academic-slide-pragmatic-fallback \
 
 ```text
 deck_order_map.md
+paper_analysis.json
+paper_analysis_validation.json
 figure_source_manifest.md
 page_briefs.md
 fallback_edit_plan.json
@@ -145,6 +169,7 @@ skills/
     SKILL.md
     assets/sample-literature-report.pptx
     scripts/
+      validate_paper_analysis.py        # 校验论文逻辑、图表、证据链和页面计划的引用关系
       build_fallback_template_pptx.py
       audit_fallback_template_pptx.py
       audit_exact_template_fidelity.py

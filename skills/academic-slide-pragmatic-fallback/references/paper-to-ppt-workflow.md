@@ -44,9 +44,15 @@ Then create `deck_order_map.md` using `deck-order-map.md`. This map is the sourc
 
 For result-heavy papers, split a generic `研究结果` section into more useful labels such as `性能验证`, `结构证据`, `机理解释`, `应用验证`, or domain-appropriate alternatives.
 
+## 1.4 Structured Analysis Gate
+
+Before page planning, create `paper_analysis.json` according to `paper-analysis-contract.md` and run its validator. This file is the immutable handoff between paper reading and slide generation. It records the logic tree, real figure limits, evidence chains, navigation labels, and every planned slide.
+
+Do not proceed to page briefs or PPT generation when validation fails. If the analysis changes, update and validate it before changing the deck order.
+
 ## 2. Paper Logic Tree
 
-Extract the following from the main paper first, then enrich it with SI evidence:
+Extract the following into `paper_analysis.json` from the main paper first, then enrich it with SI evidence:
 
 ```text
 1. research object
@@ -64,7 +70,7 @@ For Chinese literature reports, write the logic in clear academic presentation l
 
 ## 3. Evidence Chain
 
-For each result, identify:
+For each result, record one `evidence_chains` item:
 
 ```text
 question -> figure evidence -> interpretation -> page claim

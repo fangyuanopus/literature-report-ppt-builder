@@ -235,7 +235,14 @@ def audit(
         expected_count = len(report.get("selected_source_slides", []))
         if expected_count and expected_count != len(prs.slides):
             result["issues"].append(f"slide count mismatch: pptx={len(prs.slides)}, report={expected_count}")
-        for key in ("overflow_warnings", "ellipsis_warnings", "image_frame_warnings", "untouched_replaceable_slots", "limitations"):
+        for key in (
+            "overflow_warnings",
+            "ellipsis_warnings",
+            "image_frame_warnings",
+            "image_readability_warnings",
+            "untouched_replaceable_slots",
+            "limitations",
+        ):
             items = report.get(key) or []
             if items:
                 result["warnings"].append({"kind": key, "count": len(items)})

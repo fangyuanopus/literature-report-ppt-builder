@@ -25,6 +25,8 @@ Pass only if:
 - main claims are separated from interpretation and speculation;
 - SI evidence has been checked for methods, controls, and supplementary figures;
 - technical terms, sample names, units, and conditions are preserved.
+- `paper_analysis.json` exists and `scripts/validate_paper_analysis.py --fail-on-review` passes;
+- each figure record separates direct observation from what that figure cannot prove.
 
 ## Gate 3: Figure Integrity Gate
 
@@ -45,6 +47,7 @@ Pass only if:
 - each slide has one main claim;
 - dense results are split across multiple pages;
 - the results section follows an evidence chain rather than random figure order.
+- every evidence-led slide references declared evidence and figure IDs from `paper_analysis.json`.
 
 ## Gate 5: Image2 Layout Gate
 

@@ -268,6 +268,30 @@ def audit(
             elif "new_text" in edit:
                 if target_shape.text_frame.text.rstrip() != str(edit["new_text"]).rstrip():
                     slide_issues.append(f"shape {shape_id} replacement text mismatch")
+                source_paragraphs = source_shape.text_frame.paragraphs
+                target_paragraphs = target_shape.text_frame.paragraphs
+                fallback_source = next((paragraph for paragraph in source_paragraphs if paragraph.runs), None)
+                for paragraph_index, expected_text in enumerate(str(edit["new_text"]).split("\n")):
+                    if paragraph_index >= len(target_paragraphs):
+                        slide_issues.append(f"shape {shape_id} paragraph {paragraph_index} is missing")
+                        continue
+                    source_paragraph = source_paragraphs[paragraph_index]
+                    inherited_run = inherited_style_run(source_paragraph, "base", None)
+                    if inherited_run is None and fallback_source is not None:
+                        inherited_run = inherited_style_run(fallback_source, "base", None)
+                    target_runs = list(target_paragraphs[paragraph_index].runs)
+                    if len(target_runs) != 1 or target_runs[0].text != expected_text:
+                        slide_issues.append(
+                            f"shape {shape_id} paragraph {paragraph_index} plain replacement runs changed unexpectedly"
+                        )
+                    elif inherited_run is None:
+                        slide_issues.append(
+                            f"shape {shape_id} paragraph {paragraph_index} has no inherited base style"
+                        )
+                    elif run_properties_xml(inherited_run) != run_properties_xml(target_runs[0]):
+                        slide_issues.append(
+                            f"shape {shape_id} paragraph {paragraph_index} plain replacement style changed"
+                        )
 
         if slide_issues:
             issues.extend(f"slide {output_no}: {issue}" for issue in slide_issues)

@@ -1,0 +1,106 @@
+{
+  "$schema": "academic-paper-analysis/v1",
+  "paper": {
+    "title": "Attention Is All You Need",
+    "domain": "algorithm",
+    "source_files": [
+      {"source_id": "main", "role": "main", "path": "attention_is_all_you_need.pdf"}
+    ]
+  },
+  "logic_tree": {
+    "research_object": "基于注意力的序列到序列模型",
+    "background": "机器翻译依赖循环或卷积序列模型",
+    "unresolved_problem": "循环结构限制并行计算并拉长长程依赖路径",
+    "author_strategy": "以自注意力和前馈网络组成编码器与解码器",
+    "methods": "缩放点积注意力、多头注意力、位置编码和机器翻译实验",
+    "key_conclusion": "Transformer 在翻译质量与训练效率上取得领先结果",
+    "limitations_and_inspiration": "计算复杂度随序列长度平方增长，注意力架构可扩展到更广泛任务"
+  },
+  "figures": [
+    {
+      "figure_id": "fig_architecture",
+      "source_id": "main",
+      "source_page": 3,
+      "source_label": "Figure 1",
+      "direct_observation": "编码器和解码器均由注意力与前馈子层堆叠，图中标记为 N×。",
+      "does_not_prove": "架构图本身不能证明翻译质量提升。",
+      "evidence_strength": "direct"
+    },
+    {
+      "figure_id": "table_translation",
+      "source_id": "main",
+      "source_page": 8,
+      "source_label": "Table 2",
+      "direct_observation": "Transformer big 的 EN-DE BLEU 为 28.4，EN-FR BLEU 为 41.8。",
+      "does_not_prove": "该表不能单独解释性能提升的因果机制。",
+      "evidence_strength": "direct"
+    }
+  ],
+  "evidence_chains": [
+    {
+      "evidence_id": "ev_architecture",
+      "question": "作者如何摆脱循环主干？",
+      "figure_ids": ["fig_architecture"],
+      "interpretation": "注意力和前馈网络构成完全并行的编码器/解码器主干。",
+      "slide_claim": "Transformer 以注意力和前馈层替代循环主干。",
+      "evidence_strength": "direct",
+      "caution": "并行优势还需结合训练实验说明。"
+    },
+    {
+      "evidence_id": "ev_translation",
+      "question": "模型是否在机器翻译任务中取得领先表现？",
+      "figure_ids": ["table_translation"],
+      "interpretation": "表中结果显示 Transformer big 在两项翻译基准上达到较高 BLEU。",
+      "slide_claim": "Transformer 在两项机器翻译基准上取得领先 BLEU。",
+      "evidence_strength": "direct",
+      "caution": "结论限定于论文报告的基准、模型配置和比较范围。"
+    }
+  ],
+  "navigation": [
+    {"label": "基本信息", "purpose": "论文与问题概览"},
+    {"label": "方法框架", "purpose": "模型策略与机制"},
+    {"label": "实验结果", "purpose": "性能证据"}
+  ],
+  "slides": [
+    {
+      "slide_no": 1,
+      "slide_id": "s01",
+      "section": "基本信息",
+      "page_role": "cover",
+      "mainline_or_backup": "mainline",
+      "title": "Attention Is All You Need",
+      "evidence_ids": [],
+      "figure_ids": []
+    },
+    {
+      "slide_no": 2,
+      "slide_id": "s02",
+      "section": "方法框架",
+      "page_role": "design_strategy",
+      "mainline_or_backup": "mainline",
+      "title": "以注意力与前馈层替代循环主干",
+      "evidence_ids": ["ev_architecture"],
+      "figure_ids": ["fig_architecture"]
+    },
+    {
+      "slide_no": 3,
+      "slide_id": "s03",
+      "section": "实验结果",
+      "page_role": "performance_evidence",
+      "mainline_or_backup": "mainline",
+      "title": "Transformer 在机器翻译基准上取得领先 BLEU",
+      "evidence_ids": ["ev_translation"],
+      "figure_ids": ["table_translation"]
+    },
+    {
+      "slide_no": 4,
+      "slide_id": "s04",
+      "section": "基本信息",
+      "page_role": "closing",
+      "mainline_or_backup": "closing",
+      "title": "汇报结束",
+      "evidence_ids": [],
+      "figure_ids": []
+    }
+  ]
+}

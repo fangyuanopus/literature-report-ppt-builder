@@ -62,10 +62,11 @@ Every displayed scientific figure requires `source_type: figure_crop`, `crop_ver
 ## Required production flow
 
 1. Confirm paper/SI source availability and explicit fallback consent.
-2. Create the logic tree, terminology table, figure manifest, adaptive navigation, and `deck_order_map.md`.
-3. Choose Route A, B, or C and prepare page briefs with source crops and page types.
-4. Build only through that route; do not silently substitute a different route.
-5. Run structural QA, render every slide with PowerPoint/LibreOffice where available, inspect individual pages and a montage, and fix all overflow, overlap, legacy residue, unreadable figures, and inconsistent chrome.
+2. Create `paper_analysis.json` following `references/paper-analysis-contract.md`, then run `scripts/validate_paper_analysis.py --fail-on-review`. This is the source of truth for the logic tree, figure boundaries, evidence chains, adaptive navigation, and slide claims.
+3. Derive the terminology table, figure-source manifest, `deck_order_map.md`, and page briefs from the validated analysis. Do not introduce a slide claim, source figure, or navigation section that is absent from the analysis without updating and revalidating it.
+4. Choose Route A, B, or C and prepare page briefs with source crops and page types.
+5. Build only through that route; do not silently substitute a different route.
+6. Run structural QA, render every slide with PowerPoint/LibreOffice where available, inspect individual pages and a montage, and fix all overflow, overlap, legacy residue, unreadable figures, and inconsistent chrome.
 
 For exact-template mode, also compare the montage with the source-template montage. Passing structural QA alone is insufficient: the inherited navigation, title treatment, margins, footer band, image framing, and whitespace rhythm must remain visibly unchanged.
 

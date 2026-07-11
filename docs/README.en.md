@@ -10,6 +10,28 @@ English | [中文](../README.md)
 
 Core principle: **real evidence first, explicit delivery route, and no confusion between Image2 output and editable code output.**
 
+## Analyze the paper before generating slides
+
+This skill does not send a PDF summary directly into a template. A full task first creates and validates `paper_analysis.json`, an evidence contract that every downstream slide plan must follow:
+
+```text
+main paper + SI
+  -> logic tree
+  -> figure records with evidence boundaries
+  -> evidence chains
+  -> navigation and slide plan
+  -> Route A / B / C generation and QA
+```
+
+Each evidence-led slide must point back to a declared evidence chain and real figure. Each figure records its source file, PDF page, printed label, direct observation, and what it cannot establish alone. This prevents attractive but unsupported slides and claim drift during refinement.
+
+```bash
+python skills/academic-slide-pragmatic-fallback/scripts/validate_paper_analysis.py \
+  paper_analysis.json --out paper_analysis_validation.json --fail-on-review
+```
+
+See the [analysis contract](../skills/academic-slide-pragmatic-fallback/references/paper-analysis-contract.md) and its [validated example](../skills/academic-slide-pragmatic-fallback/references/paper-analysis.example.json).
+
 ## Choose a delivery route first
 
 | Route | Deliverable | Editable | Use when |
@@ -69,7 +91,7 @@ Route C can reliably create clean editable academic pages in the sample's visual
 
 ```text
 Use academic-slide-pragmatic-fallback to build a Chinese literature-report PPT from this paper and SI.
-Use only real paper figures. First prepare the evidence chain and deck order. If Image2 is unavailable, ask for my consent before choosing an inherited-template code route or pragmatic code fallback.
+Use only real paper figures. First create and validate paper_analysis.json, then derive the evidence chain, navigation, and deck order from it. If Image2 is unavailable, ask for my consent before choosing an inherited-template code route or pragmatic code fallback.
 ```
 
 ### Require GPT-image-2 / Image2 full-slide delivery
@@ -123,6 +145,8 @@ For a non-trivial deck, keep at least:
 
 ```text
 deck_order_map.md
+paper_analysis.json
+paper_analysis_validation.json
 figure_source_manifest.md
 page_briefs.md
 fallback_edit_plan.json
@@ -142,6 +166,7 @@ The Image2 route additionally requires `image2_manifest.json`. The code route re
 ```text
 skills/
   academic-slide-pragmatic-fallback/   # maintained entry: Image2, exact-template, pragmatic fallback
+    scripts/validate_paper_analysis.py # validates paper-to-evidence-to-slide references
 docs/images/
   demo-slide-*.jpg                     # GPT-image-2 / Image2 full-slide demos
   demo-code-template-*.png             # code-generated, inherited-template demos

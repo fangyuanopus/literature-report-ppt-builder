@@ -78,7 +78,7 @@ def visual_width(text: str) -> float:
         elif char == " ":
             width += 0.35
         elif char.isascii():
-            width += 0.5
+            width += 0.6
         else:
             width += 0.8
     return width
@@ -252,6 +252,27 @@ def slot_aspect(slot: dict[str, Any]) -> float:
 
 def aspect_occupancy(image_aspect: float, frame_aspect: float) -> float:
     return min(image_aspect / frame_aspect, frame_aspect / image_aspect)
+
+
+def predicted_display_size_px(
+    image_aspect: float,
+    slot: dict[str, Any],
+    slide_size: dict[str, Any],
+) -> tuple[int, int]:
+    frame = slot.get("frame", {}).get("emu", {})
+    slide = slide_size.get("emu", {})
+    frame_width = float(frame.get("width") or 1)
+    frame_height = float(frame.get("height") or 1)
+    frame_aspect = frame_width / frame_height
+    if image_aspect >= frame_aspect:
+        inserted_width = frame_width
+        inserted_height = frame_width / image_aspect
+    else:
+        inserted_height = frame_height
+        inserted_width = frame_height * image_aspect
+    width_px = round(inserted_width / float(slide.get("width") or 1) * 1280)
+    height_px = round(inserted_height / float(slide.get("height") or 1) * 720)
+    return width_px, height_px
 
 
 def figure_fit_score(page: dict[str, Any], brief: dict[str, Any]) -> int:
@@ -452,6 +473,10 @@ def draft_plan(briefs: list[dict[str, Any]], manifest: dict[str, Any]) -> tuple[
             for image_aspect, slot in zip(aspects, chosen_slots)
         ]
         figure_profiles = [figure_profile(figure) for figure in brief.get("figures") or []]
+        predicted_display_sizes = [
+            predicted_display_size_px(image_aspect, slot, manifest.get("slide_size") or {})
+            for image_aspect, slot in zip(aspects, chosen_slots)
+        ]
         delete_count = sum(1 for edit in mapped["edits"] if edit.get("action") == "delete")
         text_edit_count = sum(1 for edit in mapped["edits"] if "new_text" in edit)
         image_edit_count = sum(1 for edit in mapped["edits"] if "new_image" in edit)
@@ -462,6 +487,13 @@ def draft_plan(briefs: list[dict[str, Any]], manifest: dict[str, Any]) -> tuple[
             warnings.append(f"source slide has many extra image slots: need {figures_needed}, have {images_available}")
         if predicted_occupancy and min(predicted_occupancy) < 0.45:
             warnings.append(f"low predicted image occupancy: {predicted_occupancy}")
+        for profile, display_size in zip(figure_profiles, predicted_display_sizes):
+            if (profile.get("dense") or profile.get("kind") == "table") and (
+                display_size[0] < 560 or display_size[1] < 170
+            ):
+                warnings.append(
+                    f"dense table predicted too small at 1280x720: {display_size[0]}x{display_size[1]} px"
+                )
         if delete_count > 8:
             warnings.append(f"many inherited objects will be deleted: {delete_count}")
         if not text_edit_count:
@@ -480,6 +512,7 @@ def draft_plan(briefs: list[dict[str, Any]], manifest: dict[str, Any]) -> tuple[
                 "image_slots_available": images_available,
                 "predicted_image_occupancy": predicted_occupancy,
                 "figure_profiles": figure_profiles,
+                "predicted_display_sizes_px": predicted_display_sizes,
                 "text_edits": text_edit_count,
                 "image_edits": image_edit_count,
                 "delete_edits": delete_count,

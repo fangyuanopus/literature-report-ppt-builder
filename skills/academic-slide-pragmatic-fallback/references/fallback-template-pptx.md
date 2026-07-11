@@ -113,6 +113,8 @@ For figure-led pages:
 
 If a figure is too small, visually off-center, margin-dominated, or dense to read after preparation, split the evidence across multiple slides, crop a more focused real region, choose a different source slide with a better image slot, or move it to backup. Do not shrink a full paper table until it becomes decorative.
 
+For code-built fallback decks, classify dense tables in the edit plan. The builder's readability gate evaluates the actual inserted size at a 1280x720 review canvas, independently of frame occupancy, so a wide but shallow table cannot pass merely because it fills its small slot.
+
 For normal content pages:
 
 - use one dominant content area occupying roughly 55-75% of the slide width or height;

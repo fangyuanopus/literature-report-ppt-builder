@@ -48,7 +48,9 @@ def visual_width(text: str) -> float:
         elif char == " ":
             width += 0.35
         elif char.isascii():
-            width += 0.5
+            # Mixed Latin/CJK captions render wider than the old half-em
+            # approximation in the bundled Chinese template.
+            width += 0.6
         else:
             width += 0.8
     return width
@@ -145,21 +147,23 @@ def comparable_text(text: str | None) -> str | None:
     return text.rstrip() if text is not None else None
 
 
-def rebuild_paragraph_runs(paragraph, run_specs: list[dict[str, Any]] | str) -> None:
+def rebuild_paragraph_runs(
+    paragraph,
+    run_specs: list[dict[str, Any]] | str,
+    fallback_run_elements: list[Any] | None = None,
+) -> None:
     if isinstance(run_specs, str):
         run_specs = [{"text": run_specs, "style": "base"}]
     source_runs = list(paragraph.runs)
     source_run_elements = [deepcopy(run._r) for run in source_runs]
+    if not source_run_elements and fallback_run_elements:
+        source_run_elements = [deepcopy(run_element) for run_element in fallback_run_elements]
 
     base_index = 0
     emphasis_index = None
-    for index, run in enumerate(source_runs):
-        color = run.font.color
-        try:
-            rgb = str(color.rgb) if color.type else None
-        except (AttributeError, ValueError):
-            rgb = None
-        if rgb and rgb.upper() in {"8B0D18", "A20F18", "A30D18"}:
+    for index, run_element in enumerate(source_run_elements):
+        colors = run_element.xpath(".//*[local-name()='srgbClr']/@val")
+        if any(str(color).upper() in {"8B0D18", "A20F18", "A30D18"} for color in colors):
             emphasis_index = index
             break
 
@@ -207,6 +211,10 @@ def rebuild_paragraph_runs(paragraph, run_specs: list[dict[str, Any]] | str) -> 
 
 def replace_whole_text_box(shape, new_text: str | None, new_paragraphs: list[Any] | None) -> dict[str, Any]:
     paragraphs = shape.text_frame.paragraphs
+    fallback_run_elements = next(
+        ([deepcopy(run._r) for run in paragraph.runs] for paragraph in paragraphs if paragraph.runs),
+        [],
+    )
     if new_paragraphs is None:
         paragraph_specs: list[Any] = str(new_text or "").split("\n")
     else:
@@ -217,16 +225,16 @@ def replace_whole_text_box(shape, new_text: str | None, new_paragraphs: list[Any
         )
     for index, paragraph in enumerate(paragraphs):
         if index >= len(paragraph_specs):
-            rebuild_paragraph_runs(paragraph, "")
+            rebuild_paragraph_runs(paragraph, "", fallback_run_elements)
             continue
         spec = paragraph_specs[index]
         if isinstance(spec, str):
-            rebuild_paragraph_runs(paragraph, spec)
+            rebuild_paragraph_runs(paragraph, spec, fallback_run_elements)
         elif isinstance(spec, dict):
             runs = spec.get("runs")
             if not isinstance(runs, list) or not runs:
                 raise ValueError("new_paragraphs entries must be strings or objects with a non-empty runs list")
-            rebuild_paragraph_runs(paragraph, runs)
+            rebuild_paragraph_runs(paragraph, runs, fallback_run_elements)
         else:
             raise ValueError("new_paragraphs entries must be strings or objects")
     return {
@@ -376,6 +384,13 @@ def replace_picture_contain(slide, shape, image_path: Path, target_frame: dict[s
         "inserted_frame": {"left": new_left, "top": new_top, "width": new_width, "height": new_height},
         "frame_occupancy": round(occupancy, 4),
     }
+
+
+def image_display_size_px(picture_result: dict[str, Any], slide_width: int, slide_height: int) -> tuple[int, int]:
+    inserted = picture_result["inserted_frame"]
+    width_px = round(int(inserted["width"]) / max(1, slide_width) * 1280)
+    height_px = round(int(inserted["height"]) / max(1, slide_height) * 720)
+    return width_px, height_px
 
 
 def delete_shape(shape) -> None:
@@ -683,6 +698,7 @@ def apply_plan(args) -> dict[str, Any]:
         "overflow_warnings": [],
         "ellipsis_warnings": [],
         "image_frame_warnings": [],
+        "image_readability_warnings": [],
         "untouched_replaceable_slots": [],
         "prepared_figures": [],
         "removed_inherited_relationships": [],
@@ -802,6 +818,27 @@ def apply_plan(args) -> dict[str, Any]:
                             "suggestion": "choose a better source slide, use a tighter real crop, or split the figure",
                         }
                     )
+                profile = edit.get("figure_profile") or {}
+                if profile.get("dense") or profile.get("kind") == "table":
+                    width_px, height_px = image_display_size_px(
+                        picture_result,
+                        int(prs.slide_width),
+                        int(prs.slide_height),
+                    )
+                    min_width_px = int(edit.get("min_display_width_px", 560))
+                    min_height_px = int(edit.get("min_display_height_px", 170))
+                    if width_px < min_width_px or height_px < min_height_px:
+                        report["image_readability_warnings"].append(
+                            {
+                                "source_slide": source_slide,
+                                "slot_id": slot_id,
+                                "shape_id": shape_id,
+                                "warning": "dense table is too small for reliable reading at 1280x720",
+                                "display_size_px": [width_px, height_px],
+                                "minimum_size_px": [min_width_px, min_height_px],
+                                "suggestion": "use a wider inherited frame, split the table, or replace it with a more legible real figure",
+                            }
+                        )
                 continue
 
             raise ValueError(f"unsupported edit on source slide {source_slide}: {edit}")
@@ -848,6 +885,7 @@ def apply_plan(args) -> dict[str, Any]:
         len(report["overflow_warnings"])
         + len(report["ellipsis_warnings"])
         + len(report["image_frame_warnings"])
+        + len(report["image_readability_warnings"])
         + len(report["untouched_replaceable_slots"])
         + len(report["limitations"])
     )

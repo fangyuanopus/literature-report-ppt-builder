@@ -217,6 +217,8 @@ For a multi-point inherited body box, use structured paragraphs instead of embed
 
 `base` and `emphasis` reuse the matching inherited run formatting. Do not set a new color or font directly. The new paragraph count must not exceed the inherited paragraph count.
 
+When `new_text` contains line breaks, each line maps to one inherited paragraph. If a later inherited paragraph is empty, the builder reuses the first available inherited run style instead of falling back to PowerPoint defaults.
+
 ## Text Replacement Rules
 
 Preserve the inherited run formatting:
@@ -245,6 +247,7 @@ For inherited image slots:
 - trim PDF/screenshot whitespace or flat background margins so the real scientific content, not the surrounding paper margin, is centered in the inherited template frame;
 - preserve the inherited frame position, size, and mask unless there is a recorded reason to change it;
 - profile each real source figure/table by aspect ratio, density, and layout hint before placement;
+- mark dense tables with `figure_profile: {"kind": "table", "dense": true}`. At the default 1280x720 review size, the builder warns when the inserted table is narrower than 560 px or shorter than 170 px; use `min_display_width_px` / `min_display_height_px` only when a reviewed source justifies a different threshold;
 - for wide tables, wide plots, or dense figures that would look cramped in one inherited slot, use a recorded adaptive placement such as `fit_strategy: "adaptive_contain"` with `frame_scope: "all_image_slots"` to combine inherited image slots into one larger figure region;
 - use only real source figures listed in `figure_source_manifest.md`;
 - preserve scientific meaning when cropping;
